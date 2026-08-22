@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dastak - Visit Record</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:ui-monospace,"SF Mono",Menlo,monospace;background:#000;color:#fff;min-height:100vh;padding:24px}
+.header{border-bottom:1px solid #5A6570;padding-bottom:16px;margin-bottom:24px}
+.header h1{font-size:20px;color:#00E5FF;letter-spacing:1px;text-transform:uppercase}
+.header .sub{font-size:14px;color:#5A6570;margin-top:4px}
+.section{margin-bottom:24px}
+.section-title{font-size:12px;color:#5A6570;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;border-bottom:1px solid #1a1a1a;padding-bottom:4px}
+.field{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #111;font-size:14px}
+.field .label{color:#5A6570}
+.field .value{color:#fff}
+.field .value.flag{color:#E5484D}
+.stats{display:flex;gap:24px;margin-bottom:24px}
+.stat{flex:1;padding:16px;border:1px solid #5A6570;text-align:center}
+.stat .num{font-size:28px;color:#00E5FF}
+.stat .lbl{font-size:12px;color:#5A6570;margin-top:4px}
+.no-record{text-align:center;padding:48px 0;color:#5A6570;font-size:16px}
+.privacy-note{font-size:12px;color:#5A6570;margin-top:24px;text-align:center;border-top:1px solid #1a1a1a;padding-top:16px}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>Visit Record</h1>
+  <div class="sub">Dastak - Home-based newborn care</div>
+</div>
+<div id="content"></div>
+<script>
+var content = document.getElementById('content');
+var record = null;
+
+// §3: Read from URL fragment first (fragment is never transmitted to server)
+var hash = window.location.hash;
+if (hash && hash.length > 1) {
+  try {
+    record = JSON.parse(atob(hash.substring(1)));
+    // Save to localStorage for carry-forward on next visit
+    try { localStorage.setItem('dastak_last_record', JSON.stringify(record)); } catch(e) {}
+  } catch(e) {
+    // Fragment parse failed, fall through to localStorage
+  }
+}
+
+// Fallback: read from localStorage
+if (!record) {
+  var raw = localStorage.getItem('dastak_last_record');
+  if (raw) {
+    try { record = JSON.parse(raw); } catch(e) {}
+  }
+}
+
+if (!record) {
+  content.innerHTML = '<div class="no-record">No visit record found.<br>Complete a visit on the glasses first.</div>';
+  throw 'no record';
+}
+
+var dur = record.durationMs || 0;
+var totalSec = Math.floor(dur / 1000);
+var min = Math.floor(totalSec / 60);
+var sec = totalSec % 60;
+var durStr = min === 0 ? sec + 's' : min + 'm ' + sec + 's';
+
+var html = '<div class="stats">';
+html += '<div class="stat"><div class="num">' + record.stepCount + '</div><div class="lbl">Steps</div></div>';
+html += '<div class="stat"><div class="num">' + record.flagCount + '</div><div class="lbl">Flags</div></div>';
+html += '<div class="stat"><div class="num">' + durStr + '</div><div class="lbl">Duration</div></div>';
+html += '</div>';
+
+html += '<div class="section"><div class="section-title">Protocol</div>';
+html += '<div class="field"><span class="label">Household</span><span class="value">' + (record.householdId || '—') + '</span></div>';
+html += '<div class="field"><span class="label">Area</span><span class="value">' + (record.area || '—') + '</span></div>';
+html += '<div class="field"><span class="label">Protocol</span><span class="value">' + record.protocol + '</span></div>';
+html += '<div class="field"><span class="label">Started</span><span class="value">' + new Date(record.startedAt).toLocaleTimeString() + '</span></div>';
+html += '<div class="field"><span class="label">Completed</span><span class="value">' + record.completedAt + '</span></div>';
+html += '</div>';
+
+if (record.flags && record.flags.length > 0) {
+  html += '<div class="section"><div class="section-title">Referral Flags</div>';
+  for (var i = 0; i < record.flags.length; i++) {
+    html += '<div class="field"><span class="label">' + record.flags[i].type + '</span><span class="value flag">' + record.flags[i].referral + '</span></div>';
+  }
+  html += '</div>';
+}
+
+if (record.answers) {
+  html += '<div class="section"><div class="section-title">Answers</div>';
+  for (var k in record.answers) {
+    html += '<div class="field"><span class="label">' + k + '</span><span class="value">' + record.answers[k] + '</span></div>';
+  }
+  html += '</div>';
+}
+
+html += '<div class="privacy-note">Record transmitted via URL fragment. Never stored on server.</div>';
+
+content.innerHTML = html;
+</script>
+</body>
+</html>

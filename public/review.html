@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dastak - Supervisor Review</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:ui-monospace,"SF Mono",Menlo,monospace;background:#000;color:#fff;min-height:100vh;padding:24px}
+.header{border-bottom:1px solid #5A6570;padding-bottom:16px;margin-bottom:24px}
+.header h1{font-size:20px;color:#00E5FF;letter-spacing:1px;text-transform:uppercase}
+.header .sub{font-size:14px;color:#5A6570;margin-top:4px}
+.summary-box{border:1px solid #5A6570;padding:20px;margin-bottom:24px;font-size:16px;line-height:1.6}
+.summary-box.empty{color:#5A6570;font-style:italic}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px}
+.stat{padding:16px;border:1px solid #5A6570;text-align:center}
+.stat .num{font-size:28px;color:#00E5FF}
+.stat .lbl{font-size:12px;color:#5A6570;margin-top:4px}
+.section-title{font-size:12px;color:#5A6570;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;border-bottom:1px solid #1a1a1a;padding-bottom:4px}
+.flag-item{padding:8px 0;border-bottom:1px solid #111;font-size:14px;display:flex;justify-content:space-between}
+.loading{text-align:center;padding:48px 0;color:#5A6570}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>Supervisor Review</h1>
+  <div class="sub">Pattern summary across synced visits</div>
+</div>
+<div id="content"><div class="loading">Loading...</div></div>
+<script>
+var content=document.getElementById('content');
+var sampleVisits=[
+  {area:"Sector 3",flags:[{type:"flag_temp",referral:"Refer to the health facility."}]},
+  {area:"Sector 3",flags:[]},
+  {area:"Sector 7",flags:[{type:"flag_feeding",referral:"Refer to the health facility."}]},
+  {area:"Sector 5",flags:[]},
+  {area:"Sector 3",flags:[{type:"flag_cord",referral:"Refer to the health facility."}]},
+  {area:"Sector 7",flags:[]}
+];
+
+function render(data,summary,offline){
+  var html='';
+  html+='<div class="summary-box'+(summary==='No AI available. Review data manually.'?' empty':'')+'">'+summary+'</div>';
+  html+='<div class="stats">';
+  html+='<div class="stat"><div class="num">'+data.totalVisits+'</div><div class="lbl">Total Visits</div></div>';
+  html+='<div class="stat"><div class="num">'+data.totalFlags+'</div><div class="lbl">Flags</div></div>';
+  html+='</div>';
+  if(data.flagsByType&&Object.keys(data.flagsByType).length>0){
+    html+='<div class="section-title">Flags by Type</div>';
+    for(var k in data.flagsByType)html+='<div class="flag-item"><span>'+k+'</span><span>'+data.flagsByType[k]+'</span></div>';
+  }
+  if(data.visitsByArea&&Object.keys(data.visitsByArea).length>0){
+    html+='<div class="section-title">Visits by Area</div>';
+    for(var a in data.visitsByArea)html+='<div class="flag-item"><span>'+a+'</span><span>'+data.visitsByArea[a]+'</span></div>';
+  }
+  content.innerHTML=html;
+}
+
+var xhr=new XMLHttpRequest();
+xhr.open('POST','/api/review',true);
+xhr.setRequestHeader('Content-Type','application/json');
+xhr.onreadystatechange=function(){
+  if(xhr.readyState===4){
+    try{var data=JSON.parse(xhr.responseText);render(data.data,data.summary,data.offline)}
+    catch(e){content.innerHTML='<div class="loading">Error loading review data.</div>'}
+  }
+};
+xhr.onerror=function(){content.innerHTML='<div class="loading">Offline. Cannot load review.</div>'};
+xhr.timeout=5000;
+xhr.ontimeout=function(){content.innerHTML='<div class="loading">Timeout. Offline mode.</div>'};
+xhr.send(JSON.stringify({visits:sampleVisits}));
+</script>
+</body>
+</html>
