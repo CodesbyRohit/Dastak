@@ -602,7 +602,9 @@ function renderCount(step) {
   container.appendChild(incBtn);
   container.appendChild(confirmBtn);
 
-  incBtn.focus();
+  // Auto-focus confirm so Enter advances immediately.
+  // User adjusts with arrows, Enter confirms the current value.
+  confirmBtn.focus();
 }
 
 function renderChoice(step) {
