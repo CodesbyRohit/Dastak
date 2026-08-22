@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=600, height=600, initial-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#000000">
 <meta name="description" content="Home visit protocol companion for field health workers">
-<link rel="icon" type="image/png" href="/icon-96.png">
+<link rel="icon" type="image/png" href="/icon-96.png" sizes="96x96">
 <title>Dastak</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -29,67 +29,39 @@ html,body{width:600px;height:600px;overflow:hidden;background:#000;color:#fff;fo
 /* Options area */
 #options{padding:0 24px 24px;display:flex;flex-direction:column;gap:12px;flex-shrink:0}
 
-/* FIX 1: All interactive elements are <button> with min-height 88px */
-.option-btn{
+/* FIX 1 per MCP docs: .focusable class pattern */
+.focusable{
   font-family:ui-monospace,"SF Mono",Menlo,monospace;
   font-size:28px;
   min-height:88px;
   padding:12px 20px;
-  border:1px solid #5A6570;
+  border:2px solid transparent;
   color:#5A6570;
   background:#000;
   cursor:pointer;
   text-align:center;
   user-select:none;
-  transition:all 0.15s ease;
   outline:none;
+  transition:all 150ms ease;
 }
-.option-btn.selected,
-.option-btn:focus{
+.focusable:focus{
+  outline:none;
+  border-color:#00d4ff;
+  box-shadow:0 0 20px rgba(0,212,255,0.4);
   color:#fff;
-  border-color:#00E5FF;
-  box-shadow:0 0 0 2px #00E5FF;
 }
-.option-btn:active{
+.focusable:active{
   background:#1a1a1a;
+}
+.focusable.selected{
+  color:#fff;
+  border-color:#5A6570;
 }
 
 /* Count step */
 #count-display{font-size:72px;color:#fff;text-align:center;margin:16px 0}
 #count-unit{font-size:16px;color:#5A6570;text-align:center}
 #count-controls{display:flex;justify-content:center;gap:24px;margin-top:16px}
-
-/* Count buttons */
-.count-btn{
-  font-family:ui-monospace,"SF Mono",Menlo,monospace;
-  font-size:36px;
-  min-height:88px;
-  min-width:88px;
-  padding:12px 20px;
-  border:1px solid #5A6570;
-  color:#5A6570;
-  background:#000;
-  cursor:pointer;
-  text-align:center;
-  user-select:none;
-  outline:none;
-  transition:all 0.15s ease;
-}
-.count-btn:focus{
-  color:#fff;
-  border-color:#00E5FF;
-  box-shadow:0 0 0 2px #00E5FF;
-}
-.count-btn:active{
-  background:#1a1a1a;
-}
-.count-btn.confirm{
-  color:#00E5FF;
-  border-color:#00E5FF;
-}
-.count-btn.confirm:focus{
-  box-shadow:0 0 0 2px #00E5FF;
-}
 
 /* Danger frame */
 .danger-frame{background:#000;border:2px solid #E5484D;padding:24px}
@@ -123,29 +95,7 @@ html,body{width:600px;height:600px;overflow:hidden;background:#000;color:#fff;fo
 #idle-area .idle-protocol{font-size:16px;color:#5A6570;margin-top:4px}
 #idle-area .idle-triage{font-size:16px;color:#00E5FF;margin-top:8px;font-style:italic}
 #idle-area .idle-carry{font-size:16px;color:#5A6570;margin-top:8px}
-
-/* FIX 1: Begin button is a real <button> */
-#idle-start{
-  font-family:ui-monospace,"SF Mono",Menlo,monospace;
-  font-size:28px;
-  min-height:88px;
-  color:#00E5FF;
-  background:#000;
-  border:1px solid #00E5FF;
-  padding:16px 48px;
-  cursor:pointer;
-  outline:none;
-  transition:all 0.15s ease;
-}
-#idle-start:focus{
-  box-shadow:0 0 0 2px #00E5FF;
-  background:#1a1a1a;
-}
-#idle-start:active{
-  background:#0d2a2a;
-}
-
-#idle-controls{font-size:16px;color:#5A6570;margin-top:8px}
+#idle-area .idle-controls{font-size:16px;color:#5A6570;margin-top:8px}
 
 /* Resume indicator (Property 2) */
 #resume-indicator{font-size:16px;color:#00E5FF;margin-top:12px;opacity:0.8}
@@ -166,14 +116,13 @@ html,body{width:600px;height:600px;overflow:hidden;background:#000;color:#fff;fo
   </div>
 
   <div id="question-area">
-    <!-- IDLE: zero-query launch frame (Property 1) -->
     <div id="idle-area">
       <div id="idle-household" class="idle-household"></div>
       <div id="idle-protocol" class="idle-protocol"></div>
       <div id="idle-triage" class="idle-triage"></div>
       <div id="idle-carry" class="idle-carry"></div>
-      <!-- FIX 1: Real <button> for begin -->
-      <button id="idle-start" role="button" aria-label="Begin visit">⟩ ENTER to begin</button>
+      <!-- FIX 1: .focusable class per MCP docs -->
+      <button id="idle-start" class="focusable" role="button" aria-label="Begin visit">⟩ ENTER to begin</button>
       <div id="idle-controls" class="idle-controls">→ different household</div>
     </div>
 
@@ -234,14 +183,17 @@ html,body{width:600px;height:600px;overflow:hidden;background:#000;color:#fff;fo
 // NO fetch. NO XMLHttpRequest post-startup. NO navigator.sendBeacon.
 // This file is verified by grep at demo time.
 //
-// One XHR at startup loads the protocol step graph.
-// Everything else is in-memory from embedded data + localStorage.
-//
-// FIX 1: All input goes through real DOM focus.
+// FIX 1: Focus management per MCP docs — .focusable class pattern.
 // Neural Band pinch dispatches Enter to document.activeElement.
-// Arrow keys call .focus() on real elements.
-// Enter activates document.activeElement, never a cached index.
+// Arrow keys call .focus() on real elements via moveFocus().
 // ============================================================
+
+// --- Input constants per MCP docs ---
+var DPAD = {
+  UP: 'ArrowUp', DOWN: 'ArrowDown',
+  LEFT: 'ArrowLeft', RIGHT: 'ArrowRight',
+  SELECT: 'Enter', BACK: 'Escape'
+};
 
 // --- Embedded roster (Property 1: zero-query launch) ---
 var ROSTER = [
@@ -272,6 +224,38 @@ var householdIndex = 0;
 var resumeStep = null;
 var resumeTime = null;
 var carryFlags = {};
+
+// ============================================================
+// FIX 1 per MCP docs: Focus management
+// moveFocus() queries .focusable:not([disabled]):not(.hidden)
+// and calls .focus() on the next/prev element.
+// ============================================================
+function getFocusables() {
+  return Array.from(
+    document.querySelectorAll('.focusable:not([disabled]):not(.hidden)')
+  ).filter(function(el) {
+    // Only include focusable elements that are currently visible
+    return el.offsetParent !== null || el.id === 'idle-start';
+  });
+}
+
+function moveFocus(direction) {
+  var focusables = getFocusables();
+  if (!focusables.length) return;
+
+  var idx = focusables.indexOf(document.activeElement);
+  if (idx === -1) { focusables[0].focus(); return; }
+
+  var next;
+  if (direction === 'up' || direction === 'left') {
+    next = idx > 0 ? idx - 1 : focusables.length - 1;
+  } else {
+    next = idx < focusables.length - 1 ? idx + 1 : 0;
+  }
+
+  focusables[next].focus();
+  focusables[next].scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+}
 
 // --- Load protocol (single XHR at startup only) ---
 function loadProtocol() {
@@ -513,7 +497,6 @@ function renderStep(stepId) {
   updateStepInfo(stepIdx.split(' of ')[0], stepIdx.split(' of ')[1]);
   updateProgress(history.length, protocol.steps.length);
 
-  // Save progress for resume (Property 2)
   saveProgress();
 
   show('prompt-text');
@@ -530,7 +513,6 @@ function renderStep(stepId) {
     cfEl.style.display = 'none';
   }
 
-  // Render step type
   if (step.type === 'yesno') {
     renderYesNo(step);
     showControls('step');
@@ -554,15 +536,14 @@ function renderStep(stepId) {
 }
 
 // ============================================================
-// FIX 1: Render functions create real <button> elements
-// Arrow keys call .focus() on elements, not update variables.
+// FIX 1 per MCP docs: Render functions create .focusable elements
 // ============================================================
 function renderYesNo(step) {
   var container = document.getElementById('options');
   container.innerHTML = '';
 
   var noBtn = document.createElement('button');
-  noBtn.className = 'option-btn';
+  noBtn.className = 'focusable';
   noBtn.setAttribute('data-val', 'no');
   noBtn.setAttribute('role', 'radio');
   noBtn.setAttribute('aria-checked', 'false');
@@ -575,7 +556,7 @@ function renderYesNo(step) {
   });
 
   var yesBtn = document.createElement('button');
-  yesBtn.className = 'option-btn selected';
+  yesBtn.className = 'focusable selected';
   yesBtn.setAttribute('data-val', 'yes');
   yesBtn.setAttribute('role', 'radio');
   yesBtn.setAttribute('aria-checked', 'true');
@@ -591,7 +572,6 @@ function renderYesNo(step) {
   container.appendChild(yesBtn);
   container.style.display = '';
 
-  // FIX 1: Focus the selected option
   yesBtn.focus();
 }
 
@@ -602,13 +582,12 @@ function renderCount(step) {
   document.getElementById('count-display').style.display = '';
   document.getElementById('count-unit').style.display = '';
 
-  // FIX 1: Render count controls as real buttons
   var container = document.getElementById('options');
   container.innerHTML = '';
   container.style.display = '';
 
   var decBtn = document.createElement('button');
-  decBtn.className = 'count-btn';
+  decBtn.className = 'focusable';
   decBtn.setAttribute('aria-label', 'Decrease value');
   decBtn.textContent = '−';
   decBtn.addEventListener('click', function(e) {
@@ -617,7 +596,7 @@ function renderCount(step) {
   });
 
   var incBtn = document.createElement('button');
-  incBtn.className = 'count-btn';
+  incBtn.className = 'focusable';
   incBtn.setAttribute('aria-label', 'Increase value');
   incBtn.textContent = '+';
   incBtn.addEventListener('click', function(e) {
@@ -626,7 +605,7 @@ function renderCount(step) {
   });
 
   var confirmBtn = document.createElement('button');
-  confirmBtn.className = 'count-btn confirm';
+  confirmBtn.className = 'focusable';
   confirmBtn.setAttribute('aria-label', 'Confirm value');
   confirmBtn.textContent = '✓';
   confirmBtn.addEventListener('click', function(e) {
@@ -638,7 +617,6 @@ function renderCount(step) {
   container.appendChild(incBtn);
   container.appendChild(confirmBtn);
 
-  // Focus the increment button by default
   incBtn.focus();
 }
 
@@ -648,7 +626,7 @@ function renderChoice(step) {
 
   for (var i = 0; i < step.options.length; i++) {
     var btn = document.createElement('button');
-    btn.className = 'option-btn' + (i === 0 ? ' selected' : '');
+    btn.className = 'focusable' + (i === 0 ? ' selected' : '');
     btn.setAttribute('data-val', String(i));
     btn.setAttribute('role', 'radio');
     btn.setAttribute('aria-checked', i === 0 ? 'true' : 'false');
@@ -665,15 +643,14 @@ function renderChoice(step) {
   }
   container.style.display = '';
 
-  // FIX 1: Focus the first option
-  container.querySelector('.option-btn').focus();
+  container.querySelector('.focusable').focus();
 }
 
 // ============================================================
-// FIX 1: Focus helpers — arrow keys call .focus() on real elements
+// FIX 1: Focus helpers
 // ============================================================
 function selectOption(btn, val) {
-  var opts = document.querySelectorAll('#options .option-btn');
+  var opts = document.querySelectorAll('#options .focusable');
   for (var i = 0; i < opts.length; i++) {
     var isSelected = opts[i].getAttribute('data-val') === val;
     opts[i].classList.toggle('selected', isSelected);
@@ -683,7 +660,7 @@ function selectOption(btn, val) {
 }
 
 function selectChoiceOption(idx) {
-  var opts = document.querySelectorAll('#options .option-btn');
+  var opts = document.querySelectorAll('#options .focusable');
   for (var i = 0; i < opts.length; i++) {
     var isSelected = i === idx;
     opts[i].classList.toggle('selected', isSelected);
@@ -700,8 +677,7 @@ function adjustCount(dir) {
   countValue = Math.max(step.min || 0, Math.min(countValue, step.max || 10));
   document.getElementById('count-display').textContent = countValue.toFixed(1);
 
-  // Focus the adjusted button
-  var btns = document.querySelectorAll('#options .count-btn');
+  var btns = document.querySelectorAll('#options .focusable');
   if (dir < 0 && btns[0]) btns[0].focus();
   if (dir > 0 && btns[1]) btns[1].focus();
 }
@@ -714,12 +690,12 @@ function getActiveAnswer() {
   if (!step) return null;
 
   if (step.type === 'yesno') {
-    var active = document.querySelector('#options .option-btn.selected');
+    var active = document.querySelector('#options .focusable.selected');
     return active ? active.getAttribute('data-val') : 'yes';
   } else if (step.type === 'count') {
     return countValue;
   } else if (step.type === 'choice') {
-    var active = document.querySelector('#options .option-btn.selected');
+    var active = document.querySelector('#options .focusable.selected');
     return active ? step.options[parseInt(active.getAttribute('data-val'))] : step.options[0];
   } else if (step.type === 'info') {
     return step.danger ? 'flagged' : 'noted';
@@ -742,14 +718,12 @@ function advance() {
   var step = steps[currentStepId];
   if (!step) return;
 
-  // FIX 1: Read answer from DOM, not cached variable
   var answer = getActiveAnswer();
   var nextStep = getNextStep(step, answer);
 
   answers[currentStepId] = answer;
   history.push(currentStepId);
 
-  // Track flags (for carry-forward)
   if (step.danger) {
     flags.push({
       stepId: currentStepId,
@@ -759,7 +733,6 @@ function advance() {
     });
   }
 
-  // Check if this step leads to a flag step
   if (nextStep && steps[nextStep] && steps[nextStep].danger) {
     flags.push({
       stepId: nextStep,
@@ -828,100 +801,62 @@ function renderComplete() {
 }
 
 // ============================================================
-// FIX 1: Key handling — Enter activates document.activeElement
-// Arrow keys call .focus() on real elements
+// FIX 1 per MCP docs: D-pad Listener
+// Enter activates document.activeElement if .focusable
+// Arrow keys call moveFocus()
 // ============================================================
 document.addEventListener('keydown', function(e) {
-  if (state === 'idle') {
-    if (e.key === 'Enter') {
+  switch (e.key) {
+    case DPAD.UP:
       e.preventDefault();
-      document.activeElement.click();
-    } else if (e.key === 'ArrowRight') {
-      e.preventDefault();
-      cycleHousehold(1);
-    } else if (e.key === 'ArrowLeft') {
-      e.preventDefault();
-      cycleHousehold(-1);
-    }
-  } else if (state === 'step') {
-    var step = steps[currentStepId];
-    if (!step) return;
-
-    if (step.type === 'yesno') {
-      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
-        e.preventDefault();
-        var opts = document.querySelectorAll('#options .option-btn');
-        var currentIdx = 0;
-        for (var i = 0; i < opts.length; i++) {
-          if (opts[i] === document.activeElement) { currentIdx = i; break; }
-        }
-        var nextIdx = e.key === 'ArrowRight' ? Math.min(currentIdx + 1, opts.length - 1) : Math.max(currentIdx - 1, 0);
-        if (opts[nextIdx]) {
-          selectOption(opts[nextIdx], opts[nextIdx].getAttribute('data-val'));
-        }
-      }
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        document.activeElement.click();
-      }
-      if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        goBack();
-      }
-    } else if (step.type === 'choice') {
-      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
-        e.preventDefault();
-        var opts = document.querySelectorAll('#options .option-btn');
-        var currentIdx = 0;
-        for (var i = 0; i < opts.length; i++) {
-          if (opts[i] === document.activeElement) { currentIdx = i; break; }
-        }
-        var nextIdx = e.key === 'ArrowRight' ? Math.min(currentIdx + 1, opts.length - 1) : Math.max(currentIdx - 1, 0);
-        selectChoiceOption(nextIdx);
-      }
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        document.activeElement.click();
-      }
-      if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        goBack();
-      }
-    }
-  } else if (state === 'count') {
-    if (e.key === 'ArrowUp' || e.key === 'ArrowRight') {
-      e.preventDefault();
-      adjustCount(1);
-    }
-    if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') {
-      e.preventDefault();
-      adjustCount(-1);
-    }
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      document.activeElement.click();
-    }
-  } else if (state === 'danger' || state === 'info') {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      advance();
-    }
-  } else if (state === 'complete') {
-    if (e.key === 'ArrowUp') {
-      e.preventDefault();
+      if (state === 'idle') break;
+      if (state === 'complete') { goBack(); break; }
+      if (state === 'count') { adjustCount(1); break; }
+      // For step/danger/info: go back
       goBack();
-    }
-  }
+      break;
 
-  // FIX 4: Back gesture — Escape and Backspace map to native back.
-  // Save progress so relaunch resumes with all answers intact.
-  // Do NOT add synthetic history entries.
-  if (e.key === 'Escape' || e.key === 'Backspace') {
-    if (state !== 'idle') {
-      // Ensure progress is saved before the shell exits
-      if (currentStepId) saveProgress();
-      // Do not prevent default — let the shell handle the back gesture
-    }
+    case DPAD.DOWN:
+      e.preventDefault();
+      if (state === 'count') { adjustCount(-1); break; }
+      moveFocus('down');
+      break;
+
+    case DPAD.LEFT:
+      e.preventDefault();
+      if (state === 'idle') { cycleHousehold(-1); break; }
+      if (state === 'step') { moveFocus('left'); break; }
+      if (state === 'count') { adjustCount(-1); break; }
+      break;
+
+    case DPAD.RIGHT:
+      e.preventDefault();
+      if (state === 'idle') { cycleHousehold(1); break; }
+      if (state === 'step') { moveFocus('right'); break; }
+      if (state === 'count') { adjustCount(1); break; }
+      break;
+
+    case DPAD.SELECT:
+      e.preventDefault();
+      if (document.activeElement && document.activeElement.classList.contains('focusable')) {
+        document.activeElement.click();
+      } else if (state === 'danger' || state === 'info') {
+        advance();
+      }
+      break;
+
+    case DPAD.BACK:
+      // FIX 4 per MCP docs: Escape maps to history.back()
+      // Do not add synthetic history entries.
+      // If in visit, save progress first so relaunch resumes.
+      if (state !== 'idle' && currentStepId) {
+        saveProgress();
+      }
+      history.back();
+      break;
+
+    default:
+      return; // don't preventDefault on unhandled keys
   }
 });
 
@@ -949,9 +884,7 @@ function startVisit() {
   }
 }
 
-// ============================================================
 // Begin button click handler
-// ============================================================
 document.getElementById('idle-start').addEventListener('click', function(e) {
   e.preventDefault();
   startVisit();
@@ -971,31 +904,14 @@ setTimeout(function() {
 }, 3500);
 
 // ============================================================
-// FIX 5: Service worker registration
+// FIX 5 NOTE: Service worker is NOT registered.
+// MCP docs explicitly list "Offline Support" as Unsupported.
+// The platform does not support service workers.
+// The app still works because:
+// - Protocol is loaded via single XHR at startup
+// - Roster is embedded in HTML
+// - All state is in localStorage
 // ============================================================
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js').catch(function() {});
-}
-
-// ============================================================
-// FIX 5: Navigator.onLine indicator
-// Wired to online/offline events, feeds the existing confidence line.
-// ============================================================
-var offlineMarker = document.getElementById('offline-marker');
-function updateOnlineStatus() {
-  if (!navigator.onLine) {
-    offlineMarker.textContent = 'offline — saved locally';
-    offlineMarker.style.display = '';
-  } else {
-    // Only show if there was a load time warning
-    if (offlineMarker.textContent.indexOf('loaded in') === -1) {
-      offlineMarker.style.display = 'none';
-    }
-  }
-}
-window.addEventListener('online', updateOnlineStatus);
-window.addEventListener('offline', updateOnlineStatus);
-if (!navigator.onLine) updateOnlineStatus();
 </script>
 </body>
 </html>
