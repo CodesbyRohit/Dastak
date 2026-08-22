@@ -1,0 +1,94 @@
+// api/protocol/[id].js — Vercel serverless function
+const protocol = {
+  "id": "hbnc_day7",
+  "label": "HBNC · Day 7",
+  "start": "weight",
+  "steps": [
+    {
+      "id": "weight",
+      "prompt": "Record the baby's weight",
+      "type": "count",
+      "unit": "kg",
+      "min": 1.0,
+      "max": 6.0,
+      "step": 0.1,
+      "default": 2.8,
+      "next": "feeding"
+    },
+    {
+      "id": "feeding",
+      "prompt": "Is the baby breastfeeding well?",
+      "type": "yesno",
+      "onYes": "temp",
+      "onNo": "flag_feeding"
+    },
+    {
+      "id": "flag_feeding",
+      "prompt": "Feeding difficulty recorded",
+      "type": "info",
+      "danger": true,
+      "referral": "Refer to the health facility.",
+      "next": "temp"
+    },
+    {
+      "id": "temp",
+      "prompt": "Does the baby feel cold to touch?",
+      "type": "yesno",
+      "onYes": "flag_temp",
+      "onNo": "cord"
+    },
+    {
+      "id": "flag_temp",
+      "prompt": "Low temperature recorded",
+      "type": "info",
+      "danger": true,
+      "referral": "Refer to the health facility.",
+      "next": "cord"
+    },
+    {
+      "id": "cord",
+      "prompt": "Is the cord stump clean and dry?",
+      "type": "yesno",
+      "onYes": "activity",
+      "onNo": "flag_cord"
+    },
+    {
+      "id": "flag_cord",
+      "prompt": "Cord problem recorded",
+      "type": "info",
+      "danger": true,
+      "referral": "Refer to the health facility.",
+      "next": "activity"
+    },
+    {
+      "id": "activity",
+      "prompt": "Is the baby active when awake?",
+      "type": "yesno",
+      "onYes": "counselling",
+      "onNo": "flag_activity"
+    },
+    {
+      "id": "flag_activity",
+      "prompt": "Reduced activity recorded",
+      "type": "info",
+      "danger": true,
+      "referral": "Refer to the health facility.",
+      "next": "counselling"
+    },
+    {
+      "id": "counselling",
+      "prompt": "Topics covered with the mother",
+      "type": "choice",
+      "options": ["Feeding", "Warmth", "Hygiene", "All three"],
+      "next": null
+    }
+  ]
+};
+
+export default function handler(req, res) {
+  const { id } = req.query;
+  if (id === protocol.id) {
+    return res.status(200).json(protocol);
+  }
+  return res.status(404).json({ error: 'Protocol not found' });
+}

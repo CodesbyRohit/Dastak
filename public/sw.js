@@ -6,6 +6,9 @@ var CACHE_NAME = 'dastak-v4';
 var APP_SHELL = [
   '/glasses.html',
   '/record.html',
+  '/plan.html',
+  '/review.html',
+  '/icon.png',
   '/icon-96.png'
 ];
 
