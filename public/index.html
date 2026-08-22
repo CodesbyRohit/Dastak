@@ -870,6 +870,9 @@ function ensureAudio() {
   if (!audioCtx) {
     try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
   }
+  if (audioCtx && audioCtx.state === 'suspended') {
+    audioCtx.resume().catch(function(){});
+  }
   return audioCtx;
 }
 
@@ -901,6 +904,9 @@ function startVisit() {
   stepHistory = [];
   answers = {};
   flags = [];
+
+  // Prime AudioContext inside user-gesture call stack
+  ensureAudio();
 
   if (resumeStep) {
     renderStep(resumeStep);
