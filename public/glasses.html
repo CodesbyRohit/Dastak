@@ -5,7 +5,8 @@
 <meta name="mrbd-web-app-capable" content="yes">
 <meta name="viewport" content="width=600, height=600, initial-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#000000">
-<link rel="icon" type="image/png" href="/icon.png">
+<meta name="description" content="Home visit protocol companion for field health workers">
+<link rel="icon" type="image/png" href="/icon-96.png">
 <title>Dastak</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -15,8 +16,8 @@ html,body{width:600px;height:600px;overflow:hidden;background:#000;color:#fff;fo
 
 /* Context band */
 #context{height:72px;padding:0 24px;display:flex;flex-direction:column;justify-content:center;border-bottom:1px solid #5A6570;flex-shrink:0}
-#context .label{font-size:14px;color:#5A6570;letter-spacing:1px;text-transform:uppercase}
-#context .step-info{font-size:14px;color:#5A6570;text-align:right}
+#context .label{font-size:16px;color:#5A6570;letter-spacing:1px;text-transform:uppercase}
+#context .step-info{font-size:16px;color:#5A6570;text-align:right}
 #context .header-row{display:flex;justify-content:space-between;align-items:center}
 #progress-track{width:100%;height:2px;background:#1a1a1a;margin-top:8px;flex-shrink:0}
 #progress-fill{height:100%;background:#00E5FF;width:0;transition:width 0.3s ease}
@@ -27,52 +28,127 @@ html,body{width:600px;height:600px;overflow:hidden;background:#000;color:#fff;fo
 
 /* Options area */
 #options{padding:0 24px 24px;display:flex;flex-direction:column;gap:12px;flex-shrink:0}
-.option{font-size:28px;padding:12px 20px;border:1px solid #5A6570;color:#5A6570;cursor:pointer;text-align:center;user-select:none;transition:all 0.15s ease}
-.option.selected{color:#fff;border-color:#fff}
-.option:hover{border-color:#00E5FF}
+
+/* FIX 1: All interactive elements are <button> with min-height 88px */
+.option-btn{
+  font-family:ui-monospace,"SF Mono",Menlo,monospace;
+  font-size:28px;
+  min-height:88px;
+  padding:12px 20px;
+  border:1px solid #5A6570;
+  color:#5A6570;
+  background:#000;
+  cursor:pointer;
+  text-align:center;
+  user-select:none;
+  transition:all 0.15s ease;
+  outline:none;
+}
+.option-btn.selected,
+.option-btn:focus{
+  color:#fff;
+  border-color:#00E5FF;
+  box-shadow:0 0 0 2px #00E5FF;
+}
+.option-btn:active{
+  background:#1a1a1a;
+}
 
 /* Count step */
 #count-display{font-size:72px;color:#fff;text-align:center;margin:16px 0}
-#count-unit{font-size:14px;color:#5A6570;text-align:center}
+#count-unit{font-size:16px;color:#5A6570;text-align:center}
 #count-controls{display:flex;justify-content:center;gap:24px;margin-top:16px}
+
+/* Count buttons */
+.count-btn{
+  font-family:ui-monospace,"SF Mono",Menlo,monospace;
+  font-size:36px;
+  min-height:88px;
+  min-width:88px;
+  padding:12px 20px;
+  border:1px solid #5A6570;
+  color:#5A6570;
+  background:#000;
+  cursor:pointer;
+  text-align:center;
+  user-select:none;
+  outline:none;
+  transition:all 0.15s ease;
+}
+.count-btn:focus{
+  color:#fff;
+  border-color:#00E5FF;
+  box-shadow:0 0 0 2px #00E5FF;
+}
+.count-btn:active{
+  background:#1a1a1a;
+}
+.count-btn.confirm{
+  color:#00E5FF;
+  border-color:#00E5FF;
+}
+.count-btn.confirm:focus{
+  box-shadow:0 0 0 2px #00E5FF;
+}
 
 /* Danger frame */
 .danger-frame{background:#000;border:2px solid #E5484D;padding:24px}
 .danger-frame #prompt-text{color:#E5484D}
 .danger-frame .referral-text{font-size:28px;color:#fff;margin-top:16px;text-align:center}
-.danger-badge{font-size:14px;color:#E5484D;letter-spacing:1px;text-transform:uppercase}
+.danger-badge{font-size:16px;color:#E5484D;letter-spacing:1px;text-transform:uppercase}
 
 /* Completion */
 #complete-area{padding:24px;text-align:center;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:16px}
-#complete-area .done-label{font-size:14px;color:#00E5FF;letter-spacing:1px;text-transform:uppercase}
+#complete-area .done-label{font-size:16px;color:#00E5FF;letter-spacing:1px;text-transform:uppercase}
 #complete-area .done-text{font-size:28px;color:#fff}
-#complete-area .done-stats{font-size:14px;color:#5A6570;margin-top:8px}
-#complete-area .done-sync{font-size:14px;color:#5A6570;margin-top:16px}
+#complete-area .done-stats{font-size:16px;color:#5A6570;margin-top:8px}
+#complete-area .done-sync{font-size:16px;color:#5A6570;margin-top:16px}
 
 /* Bottom controls */
 #controls{height:192px;padding:24px;display:flex;flex-direction:column;justify-content:flex-end;border-top:1px solid #5A6570;flex-shrink:0}
-#controls .control-row{display:flex;justify-content:space-between;font-size:14px;color:#5A6570}
+#controls .control-row{display:flex;justify-content:space-between;font-size:16px;color:#5A6570}
 #controls .key{color:#00E5FF}
 #controls .action{color:#5A6570}
 #controls .enter-row{margin-top:8px}
 
 /* Offline marker */
-#offline-marker{position:absolute;top:8px;right:24px;font-size:12px;color:#5A6570;display:none}
+#offline-marker{position:absolute;top:8px;right:24px;font-size:16px;color:#5A6570;display:none}
 
 /* Carry-forward hint (Property 4) */
-#carry-forward{font-size:14px;color:#00E5FF;margin-top:12px;opacity:0.7}
+#carry-forward{font-size:16px;color:#00E5FF;margin-top:12px;opacity:0.7}
 
 /* Idle state */
 #idle-area{padding:24px;text-align:center;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:24px}
 #idle-area .idle-household{font-size:36px;color:#fff}
-#idle-area .idle-protocol{font-size:14px;color:#5A6570;margin-top:4px}
-#idle-area .idle-triage{font-size:14px;color:#00E5FF;margin-top:8px;font-style:italic}
-#idle-area .idle-carry{font-size:14px;color:#5A6570;margin-top:8px}
-#idle-area .idle-start{font-size:28px;color:#00E5FF;border:1px solid #00E5FF;padding:16px 48px;margin-top:16px}
-#idle-area .idle-controls{font-size:14px;color:#5A6570;margin-top:8px}
+#idle-area .idle-protocol{font-size:16px;color:#5A6570;margin-top:4px}
+#idle-area .idle-triage{font-size:16px;color:#00E5FF;margin-top:8px;font-style:italic}
+#idle-area .idle-carry{font-size:16px;color:#5A6570;margin-top:8px}
+
+/* FIX 1: Begin button is a real <button> */
+#idle-start{
+  font-family:ui-monospace,"SF Mono",Menlo,monospace;
+  font-size:28px;
+  min-height:88px;
+  color:#00E5FF;
+  background:#000;
+  border:1px solid #00E5FF;
+  padding:16px 48px;
+  cursor:pointer;
+  outline:none;
+  transition:all 0.15s ease;
+}
+#idle-start:focus{
+  box-shadow:0 0 0 2px #00E5FF;
+  background:#1a1a1a;
+}
+#idle-start:active{
+  background:#0d2a2a;
+}
+
+#idle-controls{font-size:16px;color:#5A6570;margin-top:8px}
 
 /* Resume indicator (Property 2) */
-#resume-indicator{font-size:14px;color:#00E5FF;margin-top:12px;opacity:0.8}
+#resume-indicator{font-size:16px;color:#00E5FF;margin-top:12px;opacity:0.8}
 
 /* Visually hidden */
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
@@ -96,7 +172,8 @@ html,body{width:600px;height:600px;overflow:hidden;background:#000;color:#fff;fo
       <div id="idle-protocol" class="idle-protocol"></div>
       <div id="idle-triage" class="idle-triage"></div>
       <div id="idle-carry" class="idle-carry"></div>
-      <div id="idle-start" class="idle-start" tabindex="0" role="button" aria-label="Begin visit">⟩ ENTER to begin</div>
+      <!-- FIX 1: Real <button> for begin -->
+      <button id="idle-start" role="button" aria-label="Begin visit">⟩ ENTER to begin</button>
       <div id="idle-controls" class="idle-controls">→ different household</div>
     </div>
 
@@ -159,6 +236,11 @@ html,body{width:600px;height:600px;overflow:hidden;background:#000;color:#fff;fo
 //
 // One XHR at startup loads the protocol step graph.
 // Everything else is in-memory from embedded data + localStorage.
+//
+// FIX 1: All input goes through real DOM focus.
+// Neural Band pinch dispatches Enter to document.activeElement.
+// Arrow keys call .focus() on real elements.
+// Enter activates document.activeElement, never a cached index.
 // ============================================================
 
 // --- Embedded roster (Property 1: zero-query launch) ---
@@ -173,7 +255,7 @@ var ROSTER = [
 
 var PROTOCOL_URL = '/api/protocol/hbnc_day7';
 var STORAGE_KEY = 'dastak_visit';
-var CARRY_KEY = 'dastak_carry'; // previous visit flags by household
+var CARRY_KEY = 'dastak_carry';
 
 // --- State ---
 var protocol = null;
@@ -186,11 +268,10 @@ var completedAt = null;
 var flags = [];
 var state = 'idle';
 var countValue = 0;
-var selectedOption = 0;
-var householdIndex = 0; // which household is selected on idle
-var resumeStep = null; // step to resume from (Property 2)
-var resumeTime = null; // when the interrupted visit was saved
-var carryFlags = {}; // loaded from localStorage (Property 4)
+var householdIndex = 0;
+var resumeStep = null;
+var resumeTime = null;
+var carryFlags = {};
 
 // --- Load protocol (single XHR at startup only) ---
 function loadProtocol() {
@@ -202,9 +283,9 @@ function loadProtocol() {
         try {
           protocol = JSON.parse(xhr.responseText);
           buildStepMap();
-          loadCarryData(); // Property 4: load previous visit flags
-          checkResume();   // Property 2: check for interrupted visit
-          computeIdle();   // Property 1: zero-query launch
+          loadCarryData();
+          checkResume();
+          computeIdle();
         } catch(e) {
           showError('Protocol parse error');
         }
@@ -226,15 +307,12 @@ function buildStepMap() {
 
 // ============================================================
 // PROPERTY 1 — Anticipation: zero-query launch
-// On launch, compute which household is next from roster + today.
-// No selection screen. No menu. No search.
 // ============================================================
 function computeIdle() {
   var household = ROSTER[householdIndex];
   document.getElementById('idle-household').textContent = household.id + ' · ' + household.area;
   document.getElementById('idle-protocol').textContent = household.protocol;
 
-  // Show carry-forward line if previous visit had a flag (Property 4)
   var carryEl = document.getElementById('idle-carry');
   var prevFlags = getCarryFlags(household.id);
   if (prevFlags) {
@@ -245,12 +323,9 @@ function computeIdle() {
     carryEl.textContent = '';
   }
 
-  // Show triage note from planner (Property 3)
   var triageEl = document.getElementById('idle-triage');
-  var triage = computeTriageNote();
-  triageEl.textContent = triage;
+  triageEl.textContent = computeTriageNote();
 
-  // Show resume indicator (Property 2)
   var resumeEl = document.getElementById('resume-indicator');
   if (resumeStep) {
     var elapsed = Date.now() - resumeTime;
@@ -260,6 +335,9 @@ function computeIdle() {
   } else {
     resumeEl.style.display = 'none';
   }
+
+  // FIX 1: Focus the begin button so Neural Band pinch works
+  document.getElementById('idle-start').focus();
 }
 
 function getStepIndex(stepId) {
@@ -272,7 +350,6 @@ function getStepIndex(stepId) {
 
 // ============================================================
 // PROPERTY 3 — Triage: the planner speaks once
-// One line on the idle frame under the loaded visit.
 // ============================================================
 function computeTriageNote() {
   var overdue = 0;
@@ -287,9 +364,7 @@ function computeTriageNote() {
 }
 
 // ============================================================
-// PROPERTY 4 — Carry-forward: the FRIDAY moment
-// Verbatim recall of her own previously recorded answer.
-// No interpretation, no inference, no generation.
+// PROPERTY 4 — Carry-forward: verbatim recall
 // ============================================================
 function loadCarryData() {
   try {
@@ -303,7 +378,6 @@ function loadCarryData() {
 function getCarryFlags(householdId) {
   var record = carryFlags[householdId];
   if (!record || !record.flags || record.flags.length === 0) return null;
-  // Return the first flag's type as a plain description
   var f = record.flags[0];
   return f.description || f.type;
 }
@@ -313,7 +387,6 @@ function getCarryStepNote(householdId, stepId) {
   if (!record || !record.flags) return null;
   for (var i = 0; i < record.flags.length; i++) {
     if (record.flags[i].stepId === stepId) {
-      // Verbatim: what was recorded, when it was recorded
       return 'flagged at the ' + record.flags[i].visitLabel + ' visit';
     }
   }
@@ -339,7 +412,6 @@ function saveCarryData(householdId, visitFlags, visitLabel) {
 
 // ============================================================
 // PROPERTY 2 — Continuity: resume mid-thought
-// Relaunch resumes at the exact step with prior answers intact.
 // ============================================================
 function checkResume() {
   try {
@@ -374,11 +446,8 @@ function clearResume() {
 }
 
 // ============================================================
-// PROPERTY 6 — Zero friction: the three-second rule
-// From launch to a usable question: under three seconds, one keypress.
+// UI helpers
 // ============================================================
-
-// --- UI helpers ---
 function show(id) {
   var els = ['idle-area','prompt-text','options','count-display','count-unit',
              'complete-area','carry-forward','resume-indicator'];
@@ -424,9 +493,12 @@ function showError(msg) {
   show('prompt-text');
   document.getElementById('prompt-text').textContent = msg;
   document.getElementById('prompt-text').style.color = '#E5484D';
+  showControls('idle');
 }
 
-// --- Render a step ---
+// ============================================================
+// Render a step
+// ============================================================
 function renderStep(stepId) {
   var step = steps[stepId];
   if (!step) { renderComplete(); return; }
@@ -441,10 +513,14 @@ function renderStep(stepId) {
   updateStepInfo(stepIdx.split(' of ')[0], stepIdx.split(' of ')[1]);
   updateProgress(history.length, protocol.steps.length);
 
+  // Save progress for resume (Property 2)
+  saveProgress();
+
   show('prompt-text');
+  document.getElementById('prompt-text').style.color = '#fff';
   document.getElementById('prompt-text').textContent = step.prompt;
 
-  // PROPERTY 4: carry-forward — show muted line beneath the question
+  // PROPERTY 4: carry-forward
   var cfEl = document.getElementById('carry-forward');
   var cfNote = getCarryStepNote(household.id, stepId);
   if (cfNote) {
@@ -456,27 +532,19 @@ function renderStep(stepId) {
 
   // Render step type
   if (step.type === 'yesno') {
-    show('prompt-text');
-    document.getElementById('carry-forward').style.display = cfNote ? '' : 'none';
     renderYesNo(step);
     showControls('step');
   } else if (step.type === 'count') {
-    show('prompt-text');
-    document.getElementById('carry-forward').style.display = cfNote ? '' : 'none';
     renderCount(step);
     state = 'count';
     showControls('count');
   } else if (step.type === 'choice') {
-    show('prompt-text');
-    document.getElementById('carry-forward').style.display = cfNote ? '' : 'none';
     renderChoice(step);
     showControls('step');
   } else if (step.type === 'info') {
-    show('prompt-text');
     if (step.danger) {
       state = 'danger';
       document.getElementById('prompt-text').style.color = '#E5484D';
-      document.getElementById('prompt-text').textContent = step.prompt;
       showControls('danger');
     } else {
       state = 'info';
@@ -485,13 +553,46 @@ function renderStep(stepId) {
   }
 }
 
+// ============================================================
+// FIX 1: Render functions create real <button> elements
+// Arrow keys call .focus() on elements, not update variables.
+// ============================================================
 function renderYesNo(step) {
-  var optionsHtml = '<div class="option" data-val="no">NO</div>';
-  optionsHtml += '<div class="option selected" data-val="yes">YES</div>';
-  document.getElementById('options').innerHTML = optionsHtml;
-  document.getElementById('options').style.display = '';
-  selectedOption = 1; // YES selected by default
-  updateOptionSelection();
+  var container = document.getElementById('options');
+  container.innerHTML = '';
+
+  var noBtn = document.createElement('button');
+  noBtn.className = 'option-btn';
+  noBtn.setAttribute('data-val', 'no');
+  noBtn.setAttribute('role', 'radio');
+  noBtn.setAttribute('aria-checked', 'false');
+  noBtn.setAttribute('aria-label', 'No');
+  noBtn.textContent = 'NO';
+  noBtn.addEventListener('click', function(e) {
+    e.preventDefault();
+    selectOption(this, 'no');
+    advance();
+  });
+
+  var yesBtn = document.createElement('button');
+  yesBtn.className = 'option-btn selected';
+  yesBtn.setAttribute('data-val', 'yes');
+  yesBtn.setAttribute('role', 'radio');
+  yesBtn.setAttribute('aria-checked', 'true');
+  yesBtn.setAttribute('aria-label', 'Yes');
+  yesBtn.textContent = 'YES';
+  yesBtn.addEventListener('click', function(e) {
+    e.preventDefault();
+    selectOption(this, 'yes');
+    advance();
+  });
+
+  container.appendChild(noBtn);
+  container.appendChild(yesBtn);
+  container.style.display = '';
+
+  // FIX 1: Focus the selected option
+  yesBtn.focus();
 }
 
 function renderCount(step) {
@@ -500,48 +601,150 @@ function renderCount(step) {
   document.getElementById('count-unit').textContent = step.unit || '';
   document.getElementById('count-display').style.display = '';
   document.getElementById('count-unit').style.display = '';
+
+  // FIX 1: Render count controls as real buttons
+  var container = document.getElementById('options');
+  container.innerHTML = '';
+  container.style.display = '';
+
+  var decBtn = document.createElement('button');
+  decBtn.className = 'count-btn';
+  decBtn.setAttribute('aria-label', 'Decrease value');
+  decBtn.textContent = '−';
+  decBtn.addEventListener('click', function(e) {
+    e.preventDefault();
+    adjustCount(-1);
+  });
+
+  var incBtn = document.createElement('button');
+  incBtn.className = 'count-btn';
+  incBtn.setAttribute('aria-label', 'Increase value');
+  incBtn.textContent = '+';
+  incBtn.addEventListener('click', function(e) {
+    e.preventDefault();
+    adjustCount(1);
+  });
+
+  var confirmBtn = document.createElement('button');
+  confirmBtn.className = 'count-btn confirm';
+  confirmBtn.setAttribute('aria-label', 'Confirm value');
+  confirmBtn.textContent = '✓';
+  confirmBtn.addEventListener('click', function(e) {
+    e.preventDefault();
+    advance();
+  });
+
+  container.appendChild(decBtn);
+  container.appendChild(incBtn);
+  container.appendChild(confirmBtn);
+
+  // Focus the increment button by default
+  incBtn.focus();
 }
 
 function renderChoice(step) {
-  var html = '';
+  var container = document.getElementById('options');
+  container.innerHTML = '';
+
   for (var i = 0; i < step.options.length; i++) {
-    var sel = i === selectedOption ? ' selected' : '';
-    html += '<div class="option' + sel + '" data-val="' + i + '">' + step.options[i] + '</div>';
+    var btn = document.createElement('button');
+    btn.className = 'option-btn' + (i === 0 ? ' selected' : '');
+    btn.setAttribute('data-val', String(i));
+    btn.setAttribute('role', 'radio');
+    btn.setAttribute('aria-checked', i === 0 ? 'true' : 'false');
+    btn.setAttribute('aria-label', step.options[i]);
+    btn.textContent = step.options[i];
+    btn.addEventListener('click', (function(idx) {
+      return function(e) {
+        e.preventDefault();
+        selectChoiceOption(idx);
+        advance();
+      };
+    })(i));
+    container.appendChild(btn);
   }
-  document.getElementById('options').innerHTML = html;
-  document.getElementById('options').style.display = '';
-  selectedOption = 0;
-  updateOptionSelection();
+  container.style.display = '';
+
+  // FIX 1: Focus the first option
+  container.querySelector('.option-btn').focus();
 }
 
-function updateOptionSelection() {
-  var opts = document.querySelectorAll('.option');
+// ============================================================
+// FIX 1: Focus helpers — arrow keys call .focus() on real elements
+// ============================================================
+function selectOption(btn, val) {
+  var opts = document.querySelectorAll('#options .option-btn');
   for (var i = 0; i < opts.length; i++) {
-    opts[i].classList.toggle('selected', i === selectedOption);
+    var isSelected = opts[i].getAttribute('data-val') === val;
+    opts[i].classList.toggle('selected', isSelected);
+    opts[i].setAttribute('aria-checked', isSelected ? 'true' : 'false');
   }
+  btn.focus();
 }
 
-// --- Navigation ---
+function selectChoiceOption(idx) {
+  var opts = document.querySelectorAll('#options .option-btn');
+  for (var i = 0; i < opts.length; i++) {
+    var isSelected = i === idx;
+    opts[i].classList.toggle('selected', isSelected);
+    opts[i].setAttribute('aria-checked', isSelected ? 'true' : 'false');
+  }
+  if (opts[idx]) opts[idx].focus();
+}
+
+function adjustCount(dir) {
+  var step = steps[currentStepId];
+  if (!step) return;
+  var delta = dir * (step.step || 0.1);
+  countValue = Math.round((countValue + delta) * 10) / 10;
+  countValue = Math.max(step.min || 0, Math.min(countValue, step.max || 10));
+  document.getElementById('count-display').textContent = countValue.toFixed(1);
+
+  // Focus the adjusted button
+  var btns = document.querySelectorAll('#options .count-btn');
+  if (dir < 0 && btns[0]) btns[0].focus();
+  if (dir > 0 && btns[1]) btns[1].focus();
+}
+
+// ============================================================
+// Navigation
+// ============================================================
+function getActiveAnswer() {
+  var step = steps[currentStepId];
+  if (!step) return null;
+
+  if (step.type === 'yesno') {
+    var active = document.querySelector('#options .option-btn.selected');
+    return active ? active.getAttribute('data-val') : 'yes';
+  } else if (step.type === 'count') {
+    return countValue;
+  } else if (step.type === 'choice') {
+    var active = document.querySelector('#options .option-btn.selected');
+    return active ? step.options[parseInt(active.getAttribute('data-val'))] : step.options[0];
+  } else if (step.type === 'info') {
+    return step.danger ? 'flagged' : 'noted';
+  }
+  return null;
+}
+
+function getNextStep(step, answer) {
+  if (step.type === 'yesno') {
+    return answer === 'yes' ? step.onYes : step.onNo;
+  } else if (step.type === 'count' || step.type === 'choice') {
+    return step.next;
+  } else if (step.type === 'info') {
+    return step.next;
+  }
+  return null;
+}
+
 function advance() {
   var step = steps[currentStepId];
   if (!step) return;
 
-  var answer = null;
-  var nextStep = null;
-
-  if (step.type === 'yesno') {
-    answer = selectedOption === 1 ? 'yes' : 'no';
-    nextStep = answer === 'yes' ? step.onYes : step.onNo;
-  } else if (step.type === 'count') {
-    answer = countValue;
-    nextStep = step.next;
-  } else if (step.type === 'choice') {
-    answer = step.options[selectedOption];
-    nextStep = step.next;
-  } else if (step.type === 'info') {
-    answer = step.danger ? 'flagged' : 'noted';
-    nextStep = step.next;
-  }
+  // FIX 1: Read answer from DOM, not cached variable
+  var answer = getActiveAnswer();
+  var nextStep = getNextStep(step, answer);
 
   answers[currentStepId] = answer;
   history.push(currentStepId);
@@ -558,7 +761,6 @@ function advance() {
 
   // Check if this step leads to a flag step
   if (nextStep && steps[nextStep] && steps[nextStep].danger) {
-    // Flag step — record it
     flags.push({
       stepId: nextStep,
       type: steps[nextStep].id,
@@ -575,12 +777,14 @@ function advance() {
 
 function goBack() {
   if (history.length < 2) return;
-  history.pop(); // remove current
-  var prevStep = history.pop(); // get previous
+  history.pop();
+  var prevStep = history.pop();
   renderStep(prevStep);
 }
 
-// --- Completion ---
+// ============================================================
+// Completion
+// ============================================================
 function renderComplete() {
   state = 'complete';
   completedAt = new Date().toLocaleTimeString();
@@ -594,12 +798,10 @@ function renderComplete() {
   document.getElementById('done-stats').textContent =
     history.length + ' steps · ' + flags.length + ' flags · ' + durStr;
 
-  // Save carry data for this household (Property 4)
   var household = ROSTER[householdIndex];
   var visitLabel = household.protocol;
   saveCarryData(household.id, flags, visitLabel);
 
-  // Build URL fragment for record (§3: fragment is never transmitted to server)
   var record = {
     householdId: household.id,
     area: household.area,
@@ -613,38 +815,27 @@ function renderComplete() {
     completedAt: completedAt
   };
 
-  var encoded = btoa(JSON.stringify(record));
-  var syncUrl = window.location.origin + '/record.html#' + encoded;
-
   document.getElementById('done-sync').textContent = 'Open on phone to view record';
 
-  // Save to localStorage for record.html fallback
   try {
     localStorage.setItem('dastak_last_record', JSON.stringify(record));
   } catch(e) {}
 
-  // Clear resume data
   clearResume();
   showControls('complete');
   updateProgress(protocol.steps.length, protocol.steps.length);
-
-  // Hide context band details
   document.getElementById('step-info').textContent = '';
 }
 
-function showError(msg) {
-  show('prompt-text');
-  document.getElementById('prompt-text').textContent = msg;
-  document.getElementById('prompt-text').style.color = '#E5484D';
-  showControls('idle');
-}
-
-// --- Key handling ---
+// ============================================================
+// FIX 1: Key handling — Enter activates document.activeElement
+// Arrow keys call .focus() on real elements
+// ============================================================
 document.addEventListener('keydown', function(e) {
   if (state === 'idle') {
     if (e.key === 'Enter') {
       e.preventDefault();
-      startVisit();
+      document.activeElement.click();
     } else if (e.key === 'ArrowRight') {
       e.preventDefault();
       cycleHousehold(1);
@@ -654,41 +845,88 @@ document.addEventListener('keydown', function(e) {
     }
   } else if (state === 'step') {
     var step = steps[currentStepId];
-    if (step && step.type === 'yesno') {
-      if (e.key === 'ArrowRight') { e.preventDefault(); selectedOption = 1; updateOptionSelection(); }
-      if (e.key === 'ArrowLeft') { e.preventDefault(); selectedOption = 0; updateOptionSelection(); }
-      if (e.key === 'Enter') { e.preventDefault(); advance(); }
-      if (e.key === 'ArrowUp') { e.preventDefault(); goBack(); }
-    } else if (step && step.type === 'choice') {
-      var opts = step.options;
-      if (e.key === 'ArrowRight') { e.preventDefault(); selectedOption = Math.min(selectedOption + 1, opts.length - 1); updateOptionSelection(); }
-      if (e.key === 'ArrowLeft') { e.preventDefault(); selectedOption = Math.max(selectedOption - 1, 0); updateOptionSelection(); }
-      if (e.key === 'Enter') { e.preventDefault(); advance(); }
-      if (e.key === 'ArrowUp') { e.preventDefault(); goBack(); }
+    if (!step) return;
+
+    if (step.type === 'yesno') {
+      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+        e.preventDefault();
+        var opts = document.querySelectorAll('#options .option-btn');
+        var currentIdx = 0;
+        for (var i = 0; i < opts.length; i++) {
+          if (opts[i] === document.activeElement) { currentIdx = i; break; }
+        }
+        var nextIdx = e.key === 'ArrowRight' ? Math.min(currentIdx + 1, opts.length - 1) : Math.max(currentIdx - 1, 0);
+        if (opts[nextIdx]) {
+          selectOption(opts[nextIdx], opts[nextIdx].getAttribute('data-val'));
+        }
+      }
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        document.activeElement.click();
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        goBack();
+      }
+    } else if (step.type === 'choice') {
+      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+        e.preventDefault();
+        var opts = document.querySelectorAll('#options .option-btn');
+        var currentIdx = 0;
+        for (var i = 0; i < opts.length; i++) {
+          if (opts[i] === document.activeElement) { currentIdx = i; break; }
+        }
+        var nextIdx = e.key === 'ArrowRight' ? Math.min(currentIdx + 1, opts.length - 1) : Math.max(currentIdx - 1, 0);
+        selectChoiceOption(nextIdx);
+      }
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        document.activeElement.click();
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        goBack();
+      }
     }
   } else if (state === 'count') {
-    var step = steps[currentStepId];
+    if (e.key === 'ArrowUp' || e.key === 'ArrowRight') {
+      e.preventDefault();
+      adjustCount(1);
+    }
+    if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') {
+      e.preventDefault();
+      adjustCount(-1);
+    }
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      document.activeElement.click();
+    }
+  } else if (state === 'danger' || state === 'info') {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      advance();
+    }
+  } else if (state === 'complete') {
     if (e.key === 'ArrowUp') {
       e.preventDefault();
-      countValue = Math.min(countValue + (step.step || 0.1), step.max || 10);
-      document.getElementById('count-display').textContent = countValue.toFixed(1);
+      goBack();
     }
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      countValue = Math.max(countValue - (step.step || 0.1), step.min || 0);
-      document.getElementById('count-display').textContent = countValue.toFixed(1);
+  }
+
+  // FIX 4: Back gesture — Escape and Backspace map to native back.
+  // Save progress so relaunch resumes with all answers intact.
+  // Do NOT add synthetic history entries.
+  if (e.key === 'Escape' || e.key === 'Backspace') {
+    if (state !== 'idle') {
+      // Ensure progress is saved before the shell exits
+      if (currentStepId) saveProgress();
+      // Do not prevent default — let the shell handle the back gesture
     }
-    if (e.key === 'Enter') { e.preventDefault(); advance(); }
-  } else if (state === 'danger' || state === 'info') {
-    if (e.key === 'Enter') { e.preventDefault(); advance(); }
-  } else if (state === 'complete') {
-    if (e.key === 'ArrowUp') { e.preventDefault(); goBack(); }
   }
 });
 
 function cycleHousehold(dir) {
   householdIndex = (householdIndex + dir + ROSTER.length) % ROSTER.length;
-  // Clear resume state when switching households
   resumeStep = null;
   resumeTime = null;
   computeIdle();
@@ -700,11 +938,9 @@ function startVisit() {
   answers = {};
   flags = [];
 
-  // If resuming (Property 2), jump to saved step
   if (resumeStep) {
     renderStep(resumeStep);
   } else {
-    // Property 1: start with first step of protocol
     if (protocol && protocol.start) {
       renderStep(protocol.start);
     } else if (protocol && protocol.steps && protocol.steps.length > 0) {
@@ -713,7 +949,17 @@ function startVisit() {
   }
 }
 
-// --- Init (Property 6: zero friction — measure time) ---
+// ============================================================
+// Begin button click handler
+// ============================================================
+document.getElementById('idle-start').addEventListener('click', function(e) {
+  e.preventDefault();
+  startVisit();
+});
+
+// ============================================================
+// Init (Property 6: zero friction)
+// ============================================================
 var loadStart = Date.now();
 loadProtocol();
 setTimeout(function() {
@@ -723,6 +969,33 @@ setTimeout(function() {
     document.getElementById('offline-marker').style.display = '';
   }
 }, 3500);
+
+// ============================================================
+// FIX 5: Service worker registration
+// ============================================================
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(function() {});
+}
+
+// ============================================================
+// FIX 5: Navigator.onLine indicator
+// Wired to online/offline events, feeds the existing confidence line.
+// ============================================================
+var offlineMarker = document.getElementById('offline-marker');
+function updateOnlineStatus() {
+  if (!navigator.onLine) {
+    offlineMarker.textContent = 'offline — saved locally';
+    offlineMarker.style.display = '';
+  } else {
+    // Only show if there was a load time warning
+    if (offlineMarker.textContent.indexOf('loaded in') === -1) {
+      offlineMarker.style.display = 'none';
+    }
+  }
+}
+window.addEventListener('online', updateOnlineStatus);
+window.addEventListener('offline', updateOnlineStatus);
+if (!navigator.onLine) updateOnlineStatus();
 </script>
 </body>
 </html>
