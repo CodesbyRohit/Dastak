@@ -904,14 +904,30 @@ setTimeout(function() {
 }, 3500);
 
 // ============================================================
-// FIX 5 NOTE: Service worker is NOT registered.
-// MCP docs explicitly list "Offline Support" as Unsupported.
-// The platform does not support service workers.
-// The app still works because:
-// - Protocol is loaded via single XHR at startup
-// - Roster is embedded in HTML
-// - All state is in localStorage
+// FIX 5: Service worker registration per MCP build guide.
+// HTTPS required, no user permission needed.
 // ============================================================
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(function() {});
+}
+
+// ============================================================
+// Online/offline indicator wired to navigator.onLine events.
+// ============================================================
+var offlineMarker = document.getElementById('offline-marker');
+function updateOnlineStatus() {
+  if (!navigator.onLine) {
+    offlineMarker.textContent = 'offline — saved locally';
+    offlineMarker.style.display = '';
+  } else {
+    if (offlineMarker.textContent.indexOf('loaded in') === -1) {
+      offlineMarker.style.display = 'none';
+    }
+  }
+}
+window.addEventListener('online', updateOnlineStatus);
+window.addEventListener('offline', updateOnlineStatus);
+if (!navigator.onLine) updateOnlineStatus();
 </script>
 </body>
 </html>
