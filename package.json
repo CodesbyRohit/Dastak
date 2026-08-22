@@ -1,5 +1,6 @@
 {
   "name": "dastak",
+  "private": true,
   "version": "1.0.0",
   "description": "Hands-free field health worker companion for Meta Ray-Ban Display",
   "main": "server.js",
