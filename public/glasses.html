@@ -100,6 +100,22 @@ html,body{width:600px;height:600px;overflow:hidden;background:#000;color:#fff;fo
 /* Resume indicator (Property 2) */
 #resume-indicator{font-size:18px;color:#00E5FF;margin-top:12px;opacity:0.8}
 
+/* Voice picker */
+#voice-picker{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:16px;padding:6px 12px;border:1px solid #8B949E;background:#000;color:#8B949E;cursor:pointer;min-width:200px;max-width:100%}
+#voice-picker:focus{border-color:#00d4ff;outline:none}
+#voice-picker option{background:#000;color:#fff}
+#voice-label{font-size:16px;color:#8B949E;margin-top:8px}
+
+/* Audio indicator */
+#audio-indicator{display:none;align-items:center;justify-content:center;gap:4px;margin-top:8px;height:24px}
+#audio-indicator.active{display:flex}
+#audio-indicator .bar{width:4px;height:12px;background:#00E5FF;border-radius:2px;animation:audio-pulse 0.6s ease-in-out infinite}
+#audio-indicator .bar:nth-child(2){animation-delay:0.1s}
+#audio-indicator .bar:nth-child(3){animation-delay:0.2s}
+#audio-indicator .bar:nth-child(4){animation-delay:0.3s}
+#audio-indicator .bar:nth-child(5){animation-delay:0.4s}
+@keyframes audio-pulse{0%,100%{height:4px;opacity:0.4}50%{height:20px;opacity:1}}
+
 /* Visually hidden */
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
 </style>
@@ -124,6 +140,9 @@ html,body{width:600px;height:600px;overflow:hidden;background:#000;color:#fff;fo
       <!-- FIX 1: .focusable class per MCP docs -->
       <button id="idle-start" class="focusable" role="button" aria-label="Begin visit">⟩ ENTER to begin</button>
       <button id="idle-test-audio" class="focusable" role="button" aria-label="Test audio" style="font-size:18px;min-height:48px;padding:8px 16px">⟩ Test audio</button>
+      <div id="voice-label">Voice:</div>
+      <select id="voice-picker" aria-label="Select voice"></select>
+      <div id="audio-indicator"><span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span></div>
       <div id="idle-controls" class="idle-controls">→ different household</div>
     </div>
 
@@ -896,16 +915,64 @@ function playTone(freq, duration, peakGain) {
 }
 
 // speechSynthesis helper — system voice at system volume.
+var VOICE_KEY = 'dastak_voice';
+
+function getVoices() {
+  if (!('speechSynthesis' in window)) return [];
+  return window.speechSynthesis.getVoices();
+}
+
+function populateVoices() {
+  var picker = document.getElementById('voice-picker');
+  if (!picker) return;
+  var voices = getVoices();
+  var saved = localStorage.getItem(VOICE_KEY);
+  picker.innerHTML = '';
+  for (var i = 0; i < voices.length; i++) {
+    var opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = voices[i].name + ' (' + voices[i].lang + ')';
+    if (saved === voices[i].name) opt.selected = true;
+    picker.appendChild(opt);
+  }
+  if (!saved && voices.length > 0) {
+    picker.selectedIndex = 0;
+    localStorage.setItem(VOICE_KEY, voices[0].name);
+  }
+}
+
+function getSelectedVoice() {
+  var picker = document.getElementById('voice-picker');
+  if (!picker || !picker.value) return null;
+  var voices = getVoices();
+  return voices[parseInt(picker.value)] || null;
+}
+
+function showAudioIndicator() {
+  var el = document.getElementById('audio-indicator');
+  if (el) el.classList.add('active');
+}
+
+function hideAudioIndicator() {
+  var el = document.getElementById('audio-indicator');
+  if (el) el.classList.remove('active');
+}
+
 function speak(text) {
   try {
     if (!('speechSynthesis' in window)) return;
     window.speechSynthesis.cancel();
+    showAudioIndicator();
     var u = new SpeechSynthesisUtterance(text);
     u.rate = 1.0;
     u.pitch = 1.0;
     u.volume = 1.0;
+    var voice = getSelectedVoice();
+    if (voice) u.voice = voice;
+    u.onend = function() { hideAudioIndicator(); };
+    u.onerror = function() { hideAudioIndicator(); };
     window.speechSynthesis.speak(u);
-  } catch(e) {}
+  } catch(e) { hideAudioIndicator(); }
 }
 
 // TONE 1: referral recorded (danger step) — speech first, oscillator fallback
@@ -956,6 +1023,18 @@ document.getElementById('idle-test-audio').addEventListener('click', function(e)
   e.preventDefault();
   speak('Audio test');
 });
+
+// Voice picker — save selection to localStorage
+document.getElementById('voice-picker').addEventListener('change', function(e) {
+  var voice = getSelectedVoice();
+  if (voice) localStorage.setItem(VOICE_KEY, voice.name);
+});
+
+// Populate voices on load and when voices change
+if ('speechSynthesis' in window) {
+  populateVoices();
+  window.speechSynthesis.onvoiceschanged = function() { populateVoices(); };
+}
 
 // ============================================================
 // Init (Property 6: zero friction)
