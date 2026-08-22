@@ -1,5 +1,6 @@
 {
   "buildCommand": null,
   "outputDirectory": "public",
-  "framework": null
+  "framework": null,
+  "rewrites": [{ "source": "/", "destination": "/glasses.html" }]
 }
