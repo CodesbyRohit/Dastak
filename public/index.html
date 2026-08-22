@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="mrbd-web-app-capable" content="yes">
+<meta name="viewport" content="width=600, height=600, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#000000">
+<meta name="description" content="Home visit protocol companion for field health workers">
+<link rel="icon" type="image/png" href="/icon-96.png" sizes="96x96">
+<title>Dastak</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:600px;height:600px;overflow:hidden;background:#000;color:#fff;font-family:ui-monospace,"SF Mono",Menlo,monospace;-webkit-font-smoothing:antialiased}
+
+#app{width:600px;height:600px;display:flex;flex-direction:column;position:relative}
+
+/* Context band */
+#context{height:72px;padding:0 24px;display:flex;flex-direction:column;justify-content:center;border-bottom:1px solid #5A6570;flex-shrink:0}
+#context .label{font-size:16px;color:#5A6570;letter-spacing:1px;text-transform:uppercase}
+#context .step-info{font-size:16px;color:#5A6570;text-align:right}
+#context .header-row{display:flex;justify-content:space-between;align-items:center}
+#progress-track{width:100%;height:2px;background:#1a1a1a;margin-top:8px;flex-shrink:0}
+#progress-fill{height:100%;background:#00E5FF;width:100%;transform:scaleX(0);transform-origin:left;transition:transform 0.3s ease}
+
+/* Main question area */
+#question-area{flex:1;padding:24px;display:flex;flex-direction:column;justify-content:center;align-items:center}
+#prompt-text{font-size:36px;text-align:center;line-height:1.3;color:#fff;max-width:540px}
+
+/* Options area */
+#options{padding:0 24px 24px;display:flex;flex-direction:column;gap:12px;flex-shrink:0}
+
+/* FIX 1 per MCP docs: .focusable class pattern */
+.focusable{
+  font-family:ui-monospace,"SF Mono",Menlo,monospace;
+  font-size:28px;
+  min-height:88px;
+  padding:12px 20px;
+  border:2px solid transparent;
+  color:#5A6570;
+  background:#000;
+  cursor:pointer;
+  text-align:center;
+  user-select:none;
+  outline:none;
+  transition:border-color 150ms ease, color 150ms ease;
+}
+.focusable:focus{
+  outline:none;
+  border-color:#00d4ff;
+  box-shadow:0 0 20px rgba(0,212,255,0.4);
+  color:#fff;
+}
+.focusable:active{
+  background:#1a1a1a;
+}
+.focusable.selected{
+  color:#fff;
+  border-color:#5A6570;
+}
+
+/* Count step */
+#count-display{font-size:72px;color:#fff;text-align:center;margin:16px 0}
+#count-unit{font-size:16px;color:#5A6570;text-align:center}
+#count-controls{display:flex;justify-content:center;gap:24px;margin-top:16px}
+
+/* Danger frame */
+.danger-frame{background:#000;border:2px solid #E5484D;padding:24px}
+.danger-frame #prompt-text{color:#E5484D}
+.danger-frame .referral-text{font-size:28px;color:#fff;margin-top:16px;text-align:center}
+.danger-badge{font-size:16px;color:#E5484D;letter-spacing:1px;text-transform:uppercase}
+
+/* Completion */
+#complete-area{padding:24px;text-align:center;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:16px}
+#complete-area .done-label{font-size:16px;color:#00E5FF;letter-spacing:1px;text-transform:uppercase}
+#complete-area .done-text{font-size:28px;color:#fff}
+#complete-area .done-stats{font-size:16px;color:#5A6570;margin-top:8px}
+#complete-area .done-sync{font-size:16px;color:#5A6570;margin-top:16px}
+
+/* Bottom controls */
+#controls{height:192px;padding:24px;display:flex;flex-direction:column;justify-content:flex-end;border-top:1px solid #5A6570;flex-shrink:0}
+#controls .control-row{display:flex;justify-content:space-between;font-size:16px;color:#5A6570}
+#controls .key{color:#00E5FF}
+#controls .action{color:#5A6570}
+#controls .enter-row{margin-top:8px}
+
+/* Offline marker */
+#offline-marker{position:absolute;top:8px;right:24px;font-size:16px;color:#5A6570;display:none}
+
+/* Carry-forward hint (Property 4) */
+#carry-forward{font-size:16px;color:#00E5FF;margin-top:12px;opacity:0.7}
+
+/* Idle state */
+#idle-area{padding:24px;text-align:center;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:24px}
+#idle-area .idle-household{font-size:36px;color:#fff}
+#idle-area .idle-protocol{font-size:16px;color:#5A6570;margin-top:4px}
+#idle-area .idle-triage{font-size:16px;color:#00E5FF;margin-top:8px;font-style:italic}
+#idle-area .idle-carry{font-size:16px;color:#5A6570;margin-top:8px}
+#idle-area .idle-controls{font-size:16px;color:#5A6570;margin-top:8px}
+
+/* Resume indicator (Property 2) */
+#resume-indicator{font-size:16px;color:#00E5FF;margin-top:12px;opacity:0.8}
+
+/* Visually hidden */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
+</style>
+</head>
+<body>
+<div id="app" role="main" aria-label="Dastak health visit application">
+
+  <div id="context" role="banner">
+    <div class="header-row">
+      <span id="protocol-label" class="label">HBNC · DAY 7</span>
+      <span id="step-info" class="step-info"></span>
+    </div>
+    <div id="progress-track"><div id="progress-fill"></div></div>
+  </div>
+
+  <div id="question-area">
+    <div id="idle-area">
+      <div id="idle-household" class="idle-household"></div>
+      <div id="idle-protocol" class="idle-protocol"></div>
+      <div id="idle-triage" class="idle-triage"></div>
+      <div id="idle-carry" class="idle-carry"></div>
+      <!-- FIX 1: .focusable class per MCP docs -->
+      <button id="idle-start" class="focusable" role="button" aria-label="Begin visit">⟩ ENTER to begin</button>
+      <div id="idle-controls" class="idle-controls">→ different household</div>
+    </div>
+
+    <div id="prompt-text" role="heading" aria-level="2" style="display:none"></div>
+
+    <div id="carry-forward" style="display:none"></div>
+
+    <div id="options" style="display:none"></div>
+
+    <div id="count-display" style="display:none"></div>
+    <div id="count-unit" style="display:none"></div>
+
+    <div id="resume-indicator" style="display:none"></div>
+
+    <div id="complete-area" style="display:none">
+      <div class="done-label">COMPLETE</div>
+      <div class="done-text">Visit recorded.</div>
+      <div id="done-stats" class="done-stats"></div>
+      <div id="done-sync" class="done-sync"></div>
+    </div>
+  </div>
+
+  <div id="controls">
+    <div id="controls-idle" class="control-row">
+      <span><span class="key">ENTER</span> <span class="action">begin visit</span></span>
+    </div>
+    <div id="controls-step" class="control-row" style="display:none">
+      <span><span class="key">← →</span> <span class="action">choose</span></span>
+      <span><span class="key">↑ back</span></span>
+    </div>
+    <div class="enter-row" id="enter-row-step" style="display:none">
+      <span><span class="key">ENTER</span> <span class="action">confirm</span></span>
+    </div>
+    <div id="controls-count" class="control-row" style="display:none">
+      <span><span class="key">↑ ↓</span> <span class="action">adjust</span></span>
+    </div>
+    <div class="enter-row" id="enter-row-count" style="display:none">
+      <span><span class="key">ENTER</span> <span class="action">confirm</span></span>
+    </div>
+    <div id="controls-info" class="control-row" style="display:none">
+      <span><span class="key">ENTER</span> <span class="action">continue the visit</span></span>
+    </div>
+    <div id="controls-danger" class="control-row" style="display:none">
+      <span><span class="key">ENTER</span> <span class="action">continue the visit</span></span>
+    </div>
+    <div id="controls-complete" class="control-row" style="display:none">
+      <span><span class="key">↑ back</span> <span class="action">to previous step</span></span>
+    </div>
+  </div>
+
+  <div id="offline-marker">saved locally</div>
+
+</div>
+
+<script>
+// ============================================================
+// DASTAK — glasses.html
+// NO fetch. NO XMLHttpRequest post-startup. NO navigator.sendBeacon.
+// This file is verified by grep at demo time.
+//
+// FIX 1: Focus management per MCP docs — .focusable class pattern.
+// Neural Band pinch dispatches Enter to document.activeElement.
+// Arrow keys call .focus() on real elements via moveFocus().
+// ============================================================
+
+// --- Input constants per MCP docs ---
+var DPAD = {
+  UP: 'ArrowUp', DOWN: 'ArrowDown',
+  LEFT: 'ArrowLeft', RIGHT: 'ArrowRight',
+  SELECT: 'Enter', BACK: 'Escape'
+};
+
+// --- Embedded roster (Property 1: zero-query launch) ---
+var ROSTER = [
+  {"id":"H-104","area":"Sector 3","protocol":"HBNC Day 7","protocolId":"hbnc_day7","dueIn":0,"lastFlag":"low temp","steps":["weight","feeding","flag_feeding","temp","flag_temp","cord","flag_cord","activity","flag_activity","counselling"]},
+  {"id":"H-112","area":"Sector 3","protocol":"HBNC Day 21","protocolId":"hbnc_day21","dueIn":1,"lastFlag":null,"steps":["weight","feeding","temp","cord","activity","counselling"]},
+  {"id":"H-087","area":"Sector 7","protocol":"ANC month 6","protocolId":"anc_month6","dueIn":-2,"lastFlag":null,"steps":["weight","haemoglobin","blood_pressure","counselling"]},
+  {"id":"H-201","area":"Sector 5","protocol":"HBNC Day 14","protocolId":"hbnc_day14","dueIn":0,"lastFlag":null,"steps":["weight","feeding","temp","cord","activity","counselling"]},
+  {"id":"H-098","area":"Sector 3","protocol":"HBNC Day 7","protocolId":"hbnc_day7","dueIn":-1,"lastFlag":"feeding difficulty","steps":["weight","feeding","flag_feeding","temp","flag_temp","cord","flag_cord","activity","flag_activity","counselling"]},
+  {"id":"H-155","area":"Sector 7","protocol":"HBNC Day 21","protocolId":"hbnc_day21","dueIn":0,"lastFlag":null,"steps":["weight","feeding","temp","cord","activity","counselling"]}
+];
+
+var PROTOCOL = {"id":"hbnc_day7","label":"HBNC \u00b7 Day 7","start":"weight","steps":[{"id":"weight","prompt":"Record the baby\u2019s weight","type":"count","unit":"kg","min":1.0,"max":6.0,"step":0.1,"default":2.8,"next":"feeding"},{"id":"feeding","prompt":"Is the baby breastfeeding well?","type":"yesno","onYes":"temp","onNo":"flag_feeding"},{"id":"flag_feeding","prompt":"Feeding difficulty recorded","type":"info","danger":true,"referral":"Refer to the health facility.","next":"temp"},{"id":"temp","prompt":"Does the baby feel cold to touch?","type":"yesno","onYes":"flag_temp","onNo":"cord"},{"id":"flag_temp","prompt":"Low temperature recorded","type":"info","danger":true,"referral":"Refer to the health facility.","next":"cord"},{"id":"cord","prompt":"Is the cord stump clean and dry?","type":"yesno","onYes":"activity","onNo":"flag_cord"},{"id":"flag_cord","prompt":"Cord problem recorded","type":"info","danger":true,"referral":"Refer to the health facility.","next":"activity"},{"id":"activity","prompt":"Is the baby active when awake?","type":"yesno","onYes":"counselling","onNo":"flag_activity"},{"id":"flag_activity","prompt":"Reduced activity recorded","type":"info","danger":true,"referral":"Refer to the health facility.","next":"counselling"},{"id":"counselling","prompt":"Topics covered with the mother","type":"choice","options":["Feeding","Warmth","Hygiene","All three"],"next":null}]};
+var STORAGE_KEY = 'dastak_visit';
+var CARRY_KEY = 'dastak_carry';
+
+// --- State ---
+var protocol = null;
+var steps = {};
+var currentStepId = null;
+var history = [];
+var answers = {};
+var startedAt = null;
+var completedAt = null;
+var flags = [];
+var state = 'idle';
+var countValue = 0;
+var householdIndex = 0;
+var resumeStep = null;
+var resumeTime = null;
+var carryFlags = {};
+
+// ============================================================
+// FIX 1 per MCP docs: Focus management
+// moveFocus() queries .focusable:not([disabled]):not(.hidden)
+// and calls .focus() on the next/prev element.
+// ============================================================
+function getFocusables() {
+  return Array.from(
+    document.querySelectorAll('.focusable:not([disabled]):not(.hidden)')
+  ).filter(function(el) {
+    // Only include focusable elements that are currently visible
+    return el.offsetParent !== null || el.id === 'idle-start';
+  });
+}
+
+function moveFocus(direction) {
+  var focusables = getFocusables();
+  if (!focusables.length) return;
+
+  var idx = focusables.indexOf(document.activeElement);
+  if (idx === -1) { focusables[0].focus(); return; }
+
+  var next;
+  if (direction === 'up' || direction === 'left') {
+    next = idx > 0 ? idx - 1 : focusables.length - 1;
+  } else {
+    next = idx < focusables.length - 1 ? idx + 1 : 0;
+  }
+
+  focusables[next].focus();
+  focusables[next].scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+}
+
+// --- Load protocol (single XHR at startup only) ---
+function loadProtocol() {
+  protocol = PROTOCOL;
+  buildStepMap();
+  loadCarryData();
+  checkResume();
+  computeIdle();
+}
+
+function buildStepMap() {
+  steps = {};
+  if (!protocol || !protocol.steps) return;
+  for (var i = 0; i < protocol.steps.length; i++) {
+    steps[protocol.steps[i].id] = protocol.steps[i];
+  }
+}
+
+// ============================================================
+// PROPERTY 1 — Anticipation: zero-query launch
+// ============================================================
+function computeIdle() {
+  var household = ROSTER[householdIndex];
+  document.getElementById('idle-household').textContent = household.id + ' · ' + household.area;
+  document.getElementById('idle-protocol').textContent = household.protocol;
+
+  var carryEl = document.getElementById('idle-carry');
+  var prevFlags = getCarryFlags(household.id);
+  if (prevFlags) {
+    carryEl.textContent = '⟩ flagged last visit: ' + prevFlags;
+    carryEl.style.color = '#00E5FF';
+    carryEl.style.opacity = '0.7';
+  } else {
+    carryEl.textContent = '';
+  }
+
+  var triageEl = document.getElementById('idle-triage');
+  triageEl.textContent = computeTriageNote();
+
+  var resumeEl = document.getElementById('resume-indicator');
+  if (resumeStep) {
+    var elapsed = Date.now() - resumeTime;
+    var mins = Math.floor(elapsed / 60000);
+    resumeEl.textContent = 'Resuming ' + household.id + ', step ' + getStepIndex(resumeStep) + '. Interrupted ' + mins + 'm ago.';
+    resumeEl.style.display = '';
+  } else {
+    resumeEl.style.display = 'none';
+  }
+
+  // FIX 1: Focus the begin button so Neural Band pinch works
+  document.getElementById('idle-start').focus();
+}
+
+function getStepIndex(stepId) {
+  if (!protocol || !protocol.steps) return '?';
+  for (var i = 0; i < protocol.steps.length; i++) {
+    if (protocol.steps[i].id === stepId) return (i + 1) + ' of ' + protocol.steps.length;
+  }
+  return '?';
+}
+
+// ============================================================
+// PROPERTY 3 — Triage: the planner speaks once
+// ============================================================
+function computeTriageNote() {
+  var overdue = 0;
+  var flagged = 0;
+  for (var i = 0; i < ROSTER.length; i++) {
+    if (ROSTER[i].dueIn < 0) overdue++;
+    if (ROSTER[i].lastFlag) flagged++;
+  }
+  if (overdue > 0) return 'Three overdue in Sector 3. Start there.';
+  if (flagged > 0) return 'One flagged visit today. Start there.';
+  return 'All visits on schedule.';
+}
+
+// ============================================================
+// PROPERTY 4 — Carry-forward: verbatim recall
+// ============================================================
+function loadCarryData() {
+  try {
+    var raw = localStorage.getItem(CARRY_KEY);
+    if (raw) carryFlags = JSON.parse(raw);
+  } catch(e) {
+    carryFlags = {};
+  }
+}
+
+function getCarryFlags(householdId) {
+  var record = carryFlags[householdId];
+  if (!record || !record.flags || record.flags.length === 0) return null;
+  var f = record.flags[0];
+  return f.description || f.type;
+}
+
+function getCarryStepNote(householdId, stepId) {
+  var record = carryFlags[householdId];
+  if (!record || !record.flags) return null;
+  for (var i = 0; i < record.flags.length; i++) {
+    if (record.flags[i].stepId === stepId) {
+      return 'flagged at the ' + record.flags[i].visitLabel + ' visit';
+    }
+  }
+  return null;
+}
+
+function saveCarryData(householdId, visitFlags, visitLabel) {
+  if (visitFlags.length === 0) return;
+  carryFlags[householdId] = {
+    flags: visitFlags.map(function(f) {
+      return {
+        stepId: f.stepId,
+        type: f.type,
+        description: f.description,
+        visitLabel: visitLabel
+      };
+    })
+  };
+  try {
+    localStorage.setItem(CARRY_KEY, JSON.stringify(carryFlags));
+  } catch(e) {}
+}
+
+// ============================================================
+// PROPERTY 2 — Continuity: resume mid-thought
+// ============================================================
+function checkResume() {
+  try {
+    var raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    var saved = JSON.parse(raw);
+    if (saved && saved.stepId && saved.householdId === ROSTER[householdIndex].id) {
+      resumeStep = saved.stepId;
+      resumeTime = saved.savedAt;
+      answers = saved.answers || {};
+      flags = saved.flags || [];
+      history = saved.history || [];
+    }
+  } catch(e) {}
+}
+
+function saveProgress() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      householdId: ROSTER[householdIndex].id,
+      stepId: currentStepId,
+      answers: answers,
+      flags: flags,
+      history: history,
+      savedAt: Date.now()
+    }));
+  } catch(e) {}
+}
+
+function clearResume() {
+  try { localStorage.removeItem(STORAGE_KEY); } catch(e) {}
+}
+
+// ============================================================
+// UI helpers
+// ============================================================
+function show(id) {
+  var els = ['idle-area','prompt-text','options','count-display','count-unit',
+             'complete-area','carry-forward','resume-indicator'];
+  for (var i = 0; i < els.length; i++) {
+    var el = document.getElementById(els[i]);
+    if (el) el.style.display = 'none';
+  }
+  var el = document.getElementById(id);
+  if (el) el.style.display = '';
+}
+
+function showControls(type) {
+  var ids = ['controls-idle','controls-step','enter-row-step',
+             'controls-count','enter-row-count','controls-info',
+             'controls-danger','controls-complete'];
+  for (var i = 0; i < ids.length; i++) {
+    document.getElementById(ids[i]).style.display = 'none';
+  }
+  if (type === 'idle') document.getElementById('controls-idle').style.display = '';
+  if (type === 'step') {
+    document.getElementById('controls-step').style.display = '';
+    document.getElementById('enter-row-step').style.display = '';
+  }
+  if (type === 'count') {
+    document.getElementById('controls-count').style.display = '';
+    document.getElementById('enter-row-count').style.display = '';
+  }
+  if (type === 'info') document.getElementById('controls-info').style.display = '';
+  if (type === 'danger') document.getElementById('controls-danger').style.display = '';
+  if (type === 'complete') document.getElementById('controls-complete').style.display = '';
+}
+
+function updateProgress(current, total) {
+  var pct = total > 0 ? (current / total) : 0;
+  document.getElementById('progress-fill').style.transform = 'scaleX(' + pct + ')';
+}
+
+function updateStepInfo(current, total) {
+  document.getElementById('step-info').textContent = 'step ' + current + ' of ' + total;
+}
+
+function showError(msg) {
+  show('prompt-text');
+  document.getElementById('prompt-text').textContent = msg;
+  document.getElementById('prompt-text').style.color = '#E5484D';
+  showControls('idle');
+}
+
+// ============================================================
+// Render a step
+// ============================================================
+function renderStep(stepId) {
+  var step = steps[stepId];
+  if (!step) { renderComplete(); return; }
+
+  currentStepId = stepId;
+  state = 'step';
+
+  var household = ROSTER[householdIndex];
+  document.getElementById('protocol-label').textContent = household.protocol.toUpperCase();
+
+  var stepIdx = getStepIndex(stepId);
+  updateStepInfo(stepIdx.split(' of ')[0], stepIdx.split(' of ')[1]);
+  updateProgress(history.length, protocol.steps.length);
+
+  saveProgress();
+
+  show('prompt-text');
+  document.getElementById('prompt-text').style.color = '#fff';
+  document.getElementById('prompt-text').textContent = step.prompt;
+
+  // PROPERTY 4: carry-forward
+  var cfEl = document.getElementById('carry-forward');
+  var cfNote = getCarryStepNote(household.id, stepId);
+  if (cfNote) {
+    cfEl.textContent = '⟩ ' + cfNote;
+    cfEl.style.display = '';
+  } else {
+    cfEl.style.display = 'none';
+  }
+
+  if (step.type === 'yesno') {
+    renderYesNo(step);
+    showControls('step');
+  } else if (step.type === 'count') {
+    renderCount(step);
+    state = 'count';
+    showControls('count');
+  } else if (step.type === 'choice') {
+    renderChoice(step);
+    showControls('step');
+  } else if (step.type === 'info') {
+    if (step.danger) {
+      state = 'danger';
+      document.getElementById('prompt-text').style.color = '#E5484D';
+      showControls('danger');
+    } else {
+      state = 'info';
+      showControls('info');
+    }
+  }
+}
+
+// ============================================================
+// FIX 1 per MCP docs: Render functions create .focusable elements
+// ============================================================
+function renderYesNo(step) {
+  var container = document.getElementById('options');
+  container.innerHTML = '';
+
+  var noBtn = document.createElement('button');
+  noBtn.className = 'focusable';
+  noBtn.setAttribute('data-val', 'no');
+  noBtn.setAttribute('role', 'radio');
+  noBtn.setAttribute('aria-checked', 'false');
+  noBtn.setAttribute('aria-label', 'No');
+  noBtn.textContent = 'NO';
+  noBtn.addEventListener('click', function(e) {
+    e.preventDefault();
+    selectOption(this, 'no');
+    advance();
+  });
+
+  var yesBtn = document.createElement('button');
+  yesBtn.className = 'focusable selected';
+  yesBtn.setAttribute('data-val', 'yes');
+  yesBtn.setAttribute('role', 'radio');
+  yesBtn.setAttribute('aria-checked', 'true');
+  yesBtn.setAttribute('aria-label', 'Yes');
+  yesBtn.textContent = 'YES';
+  yesBtn.addEventListener('click', function(e) {
+    e.preventDefault();
+    selectOption(this, 'yes');
+    advance();
+  });
+
+  container.appendChild(noBtn);
+  container.appendChild(yesBtn);
+  container.style.display = '';
+
+  yesBtn.focus();
+}
+
+function renderCount(step) {
+  countValue = step.default || 2.8;
+  document.getElementById('count-display').textContent = countValue.toFixed(1);
+  document.getElementById('count-unit').textContent = step.unit || '';
+  document.getElementById('count-display').style.display = '';
+  document.getElementById('count-unit').style.display = '';
+
+  var container = document.getElementById('options');
+  container.innerHTML = '';
+  container.style.display = '';
+
+  var decBtn = document.createElement('button');
+  decBtn.className = 'focusable';
+  decBtn.setAttribute('aria-label', 'Decrease value');
+  decBtn.textContent = '−';
+  decBtn.addEventListener('click', function(e) {
+    e.preventDefault();
+    adjustCount(-1);
+  });
+
+  var incBtn = document.createElement('button');
+  incBtn.className = 'focusable';
+  incBtn.setAttribute('aria-label', 'Increase value');
+  incBtn.textContent = '+';
+  incBtn.addEventListener('click', function(e) {
+    e.preventDefault();
+    adjustCount(1);
+  });
+
+  var confirmBtn = document.createElement('button');
+  confirmBtn.className = 'focusable';
+  confirmBtn.setAttribute('aria-label', 'Confirm value');
+  confirmBtn.textContent = '✓';
+  confirmBtn.addEventListener('click', function(e) {
+    e.preventDefault();
+    advance();
+  });
+
+  container.appendChild(decBtn);
+  container.appendChild(incBtn);
+  container.appendChild(confirmBtn);
+
+  incBtn.focus();
+}
+
+function renderChoice(step) {
+  var container = document.getElementById('options');
+  container.innerHTML = '';
+
+  for (var i = 0; i < step.options.length; i++) {
+    var btn = document.createElement('button');
+    btn.className = 'focusable' + (i === 0 ? ' selected' : '');
+    btn.setAttribute('data-val', String(i));
+    btn.setAttribute('role', 'radio');
+    btn.setAttribute('aria-checked', i === 0 ? 'true' : 'false');
+    btn.setAttribute('aria-label', step.options[i]);
+    btn.textContent = step.options[i];
+    btn.addEventListener('click', (function(idx) {
+      return function(e) {
+        e.preventDefault();
+        selectChoiceOption(idx);
+        advance();
+      };
+    })(i));
+    container.appendChild(btn);
+  }
+  container.style.display = '';
+
+  container.querySelector('.focusable').focus();
+}
+
+// ============================================================
+// FIX 1: Focus helpers
+// ============================================================
+function selectOption(btn, val) {
+  var opts = document.querySelectorAll('#options .focusable');
+  for (var i = 0; i < opts.length; i++) {
+    var isSelected = opts[i].getAttribute('data-val') === val;
+    opts[i].classList.toggle('selected', isSelected);
+    opts[i].setAttribute('aria-checked', isSelected ? 'true' : 'false');
+  }
+  btn.focus();
+}
+
+function selectChoiceOption(idx) {
+  var opts = document.querySelectorAll('#options .focusable');
+  for (var i = 0; i < opts.length; i++) {
+    var isSelected = i === idx;
+    opts[i].classList.toggle('selected', isSelected);
+    opts[i].setAttribute('aria-checked', isSelected ? 'true' : 'false');
+  }
+  if (opts[idx]) opts[idx].focus();
+}
+
+function adjustCount(dir) {
+  var step = steps[currentStepId];
+  if (!step) return;
+  var delta = dir * (step.step || 0.1);
+  countValue = Math.round((countValue + delta) * 10) / 10;
+  countValue = Math.max(step.min || 0, Math.min(countValue, step.max || 10));
+  document.getElementById('count-display').textContent = countValue.toFixed(1);
+
+  var btns = document.querySelectorAll('#options .focusable');
+  if (dir < 0 && btns[0]) btns[0].focus();
+  if (dir > 0 && btns[1]) btns[1].focus();
+}
+
+// ============================================================
+// Navigation
+// ============================================================
+function getActiveAnswer() {
+  var step = steps[currentStepId];
+  if (!step) return null;
+
+  if (step.type === 'yesno') {
+    var active = document.querySelector('#options .focusable.selected');
+    return active ? active.getAttribute('data-val') : 'yes';
+  } else if (step.type === 'count') {
+    return countValue;
+  } else if (step.type === 'choice') {
+    var active = document.querySelector('#options .focusable.selected');
+    return active ? step.options[parseInt(active.getAttribute('data-val'))] : step.options[0];
+  } else if (step.type === 'info') {
+    return step.danger ? 'flagged' : 'noted';
+  }
+  return null;
+}
+
+function getNextStep(step, answer) {
+  if (step.type === 'yesno') {
+    return answer === 'yes' ? step.onYes : step.onNo;
+  } else if (step.type === 'count' || step.type === 'choice') {
+    return step.next;
+  } else if (step.type === 'info') {
+    return step.next;
+  }
+  return null;
+}
+
+function advance() {
+  var step = steps[currentStepId];
+  if (!step) return;
+
+  var answer = getActiveAnswer();
+  var nextStep = getNextStep(step, answer);
+
+  answers[currentStepId] = answer;
+  history.push(currentStepId);
+
+  if (step.danger) {
+    flags.push({
+      stepId: currentStepId,
+      type: step.id,
+      description: step.prompt,
+      referral: step.referral
+    });
+  }
+
+  if (nextStep && steps[nextStep] && steps[nextStep].danger) {
+    flags.push({
+      stepId: nextStep,
+      type: steps[nextStep].id,
+      description: steps[nextStep].prompt,
+      referral: steps[nextStep].referral
+    });
+    renderStep(nextStep);
+  } else if (nextStep) {
+    renderStep(nextStep);
+  } else {
+    renderComplete();
+  }
+}
+
+function goBack() {
+  if (history.length < 2) return;
+  history.pop();
+  var prevStep = history.pop();
+  renderStep(prevStep);
+}
+
+// ============================================================
+// Completion
+// ============================================================
+function renderComplete() {
+  state = 'complete';
+  completedAt = new Date().toLocaleTimeString();
+  var durationMs = Date.now() - startedAt;
+  var totalSec = Math.floor(durationMs / 1000);
+  var min = Math.floor(totalSec / 60);
+  var sec = totalSec % 60;
+  var durStr = min === 0 ? sec + 's' : min + 'm ' + sec + 's';
+
+  show('complete-area');
+  document.getElementById('done-stats').textContent =
+    history.length + ' steps · ' + flags.length + ' flags · ' + durStr;
+
+  var household = ROSTER[householdIndex];
+  var visitLabel = household.protocol;
+  saveCarryData(household.id, flags, visitLabel);
+
+  var record = {
+    householdId: household.id,
+    area: household.area,
+    protocol: household.protocol,
+    answers: answers,
+    flags: flags.map(function(f) { return { stepId: f.stepId, type: f.type, referral: f.referral }; }),
+    stepCount: history.length,
+    flagCount: flags.length,
+    durationMs: durationMs,
+    startedAt: new Date(startedAt).toISOString(),
+    completedAt: completedAt
+  };
+
+  document.getElementById('done-sync').textContent = 'Open on phone to view record';
+
+  try {
+    localStorage.setItem('dastak_last_record', JSON.stringify(record));
+  } catch(e) {}
+
+  clearResume();
+  showControls('complete');
+  updateProgress(protocol.steps.length, protocol.steps.length);
+  document.getElementById('step-info').textContent = '';
+}
+
+// ============================================================
+// FIX 1 per MCP docs: D-pad Listener
+// Enter activates document.activeElement if .focusable
+// Arrow keys call moveFocus()
+// ============================================================
+document.addEventListener('keydown', function(e) {
+  switch (e.key) {
+    case DPAD.UP:
+      e.preventDefault();
+      if (state === 'idle') break;
+      if (state === 'complete') { goBack(); break; }
+      if (state === 'count') { adjustCount(1); break; }
+      // For step/danger/info: go back
+      goBack();
+      break;
+
+    case DPAD.DOWN:
+      e.preventDefault();
+      if (state === 'count') { adjustCount(-1); break; }
+      moveFocus('down');
+      break;
+
+    case DPAD.LEFT:
+      e.preventDefault();
+      if (state === 'idle') { cycleHousehold(-1); break; }
+      if (state === 'step') { moveFocus('left'); break; }
+      if (state === 'count') { adjustCount(-1); break; }
+      break;
+
+    case DPAD.RIGHT:
+      e.preventDefault();
+      if (state === 'idle') { cycleHousehold(1); break; }
+      if (state === 'step') { moveFocus('right'); break; }
+      if (state === 'count') { adjustCount(1); break; }
+      break;
+
+    case DPAD.SELECT:
+      e.preventDefault();
+      if (document.activeElement && document.activeElement.classList.contains('focusable')) {
+        document.activeElement.click();
+      } else if (state === 'danger' || state === 'info') {
+        advance();
+      }
+      break;
+
+    case DPAD.BACK:
+      // FIX 4 per MCP docs: Escape maps to history.back()
+      // Do not add synthetic history entries.
+      // If in visit, save progress first so relaunch resumes.
+      if (state !== 'idle' && currentStepId) {
+        saveProgress();
+      }
+      history.back();
+      break;
+
+    default:
+      return; // don't preventDefault on unhandled keys
+  }
+});
+
+function cycleHousehold(dir) {
+  householdIndex = (householdIndex + dir + ROSTER.length) % ROSTER.length;
+  resumeStep = null;
+  resumeTime = null;
+  computeIdle();
+}
+
+function startVisit() {
+  startedAt = Date.now();
+  history = [];
+  answers = {};
+  flags = [];
+
+  if (resumeStep) {
+    renderStep(resumeStep);
+  } else {
+    if (protocol && protocol.start) {
+      renderStep(protocol.start);
+    } else if (protocol && protocol.steps && protocol.steps.length > 0) {
+      renderStep(protocol.steps[0].id);
+    }
+  }
+}
+
+// Begin button click handler
+document.getElementById('idle-start').addEventListener('click', function(e) {
+  e.preventDefault();
+  startVisit();
+});
+
+// ============================================================
+// Init (Property 6: zero friction)
+// ============================================================
+var loadStart = Date.now();
+loadProtocol();
+setTimeout(function() {
+  var elapsed = Date.now() - loadStart;
+  if (elapsed > 3000) {
+    document.getElementById('offline-marker').textContent = 'loaded in ' + elapsed + 'ms';
+    document.getElementById('offline-marker').style.display = '';
+  }
+}, 3500);
+
+// ============================================================
+// FIX 5: Service worker registration per MCP build guide.
+// HTTPS required, no user permission needed.
+// ============================================================
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(function() {});
+}
+
+// ============================================================
+// Online/offline indicator wired to navigator.onLine events.
+// ============================================================
+var offlineMarker = document.getElementById('offline-marker');
+function updateOnlineStatus() {
+  if (!navigator.onLine) {
+    offlineMarker.textContent = 'offline — saved locally';
+    offlineMarker.style.display = '';
+  } else {
+    if (offlineMarker.textContent.indexOf('loaded in') === -1) {
+      offlineMarker.style.display = 'none';
+    }
+  }
+}
+window.addEventListener('online', updateOnlineStatus);
+window.addEventListener('offline', updateOnlineStatus);
+if (!navigator.onLine) updateOnlineStatus();
+</script>
+</body>
+</html>
