@@ -495,6 +495,7 @@ function renderStep(stepId) {
   if (cfNote) {
     cfEl.textContent = '⟩ ' + cfNote;
     cfEl.style.display = '';
+    playCarryTone();
   } else {
     cfEl.style.display = 'none';
   }
@@ -514,6 +515,7 @@ function renderStep(stepId) {
       state = 'danger';
       document.getElementById('prompt-text').style.color = '#E5484D';
       showControls('danger');
+      playReferralTone();
     } else {
       state = 'info';
       showControls('info');
@@ -858,6 +860,41 @@ function cycleHousehold(dir) {
   resumeTime = null;
   computeIdle();
 }
+
+// ============================================================
+// Audio: two tones only. WebAudio oscillator, no files.
+// ============================================================
+var audioCtx = null;
+
+function ensureAudio() {
+  if (!audioCtx) {
+    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+  }
+  return audioCtx;
+}
+
+function playTone(freq, duration, peakGain) {
+  var ctx = ensureAudio();
+  if (!ctx) return;
+  try {
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(peakGain, ctx.currentTime + duration * 0.3);
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + duration + 0.05);
+  } catch(e) {}
+}
+
+// TONE 1: referral recorded (danger step) — 440Hz, 350ms, peak 0.15
+function playReferralTone() { playTone(440, 0.35, 0.15); }
+// TONE 2: prior flag surfaced (carry-forward) — 660Hz, 120ms, peak 0.05
+function playCarryTone() { playTone(660, 0.12, 0.05); }
 
 function startVisit() {
   startedAt = Date.now();
