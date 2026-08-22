@@ -1,12 +1,45 @@
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
+const zlib = require('zlib');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Compression middleware for low-bandwidth MRBD link
+app.use(function(req, res, next) {
+  var accept = req.headers['accept-encoding'] || '';
+  if (accept.indexOf('gzip') !== -1) {
+    var origEnd = res.end;
+    var origWrite = res.write;
+    var chunks = [];
+    res.write = function(chunk) { if (chunk) chunks.push(Buffer.from(chunk)); };
+    res.end = function(chunk) {
+      if (chunk) chunks.push(Buffer.from(chunk));
+      var body = Buffer.concat(chunks);
+      if (body.length > 150) {
+        zlib.gzip(body, function(err, compressed) {
+          if (!err && compressed.length < body.length) {
+            res.setHeader('Content-Encoding', 'gzip');
+            res.setHeader('Content-Length', compressed.length);
+            origEnd.call(res, compressed);
+          } else {
+            origEnd.call(res, body);
+          }
+        });
+      } else {
+        origEnd.call(res, body);
+      }
+    };
+  }
+  next();
+});
+
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public'), {
+  maxAge: '1d',
+  etag: true
+}));
 
 // Load protocol and roster
 const protocol = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'hbnc.json'), 'utf8'));

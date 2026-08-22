@@ -2,10 +2,13 @@
 // Offline mode per MCP build guide: HTTPS required, no user permission needed.
 // Three-stage lifecycle: install → activate → fetch.
 
-var CACHE_NAME = 'dastak-v3';
+var CACHE_NAME = 'dastak-v4';
 var APP_SHELL = [
   '/glasses.html',
   '/record.html',
+  '/plan.html',
+  '/review.html',
+  '/icon.png',
   '/icon-96.png'
 ];
 

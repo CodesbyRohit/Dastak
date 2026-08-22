@@ -15,12 +15,12 @@ html,body{width:600px;height:600px;overflow:hidden;background:#000;color:#fff;fo
 #app{width:600px;height:600px;display:flex;flex-direction:column;position:relative}
 
 /* Context band */
-#context{height:72px;padding:0 24px;display:flex;flex-direction:column;justify-content:center;border-bottom:1px solid #5A6570;flex-shrink:0}
-#context .label{font-size:16px;color:#5A6570;letter-spacing:1px;text-transform:uppercase}
-#context .step-info{font-size:16px;color:#5A6570;text-align:right}
+#context{height:72px;padding:0 24px;display:flex;flex-direction:column;justify-content:center;border-bottom:1px solid #8B949E;flex-shrink:0}
+#context .label{font-size:18px;color:#8B949E;letter-spacing:1px;text-transform:uppercase}
+#context .step-info{font-size:18px;color:#8B949E;text-align:right}
 #context .header-row{display:flex;justify-content:space-between;align-items:center}
 #progress-track{width:100%;height:2px;background:#1a1a1a;margin-top:8px;flex-shrink:0}
-#progress-fill{height:100%;background:#00E5FF;width:0;transition:width 0.3s ease}
+#progress-fill{height:100%;background:#00E5FF;width:100%;transform:scaleX(0);transform-origin:left;transition:transform 0.33s steps(10);will-change:transform}
 
 /* Main question area */
 #question-area{flex:1;padding:24px;display:flex;flex-direction:column;justify-content:center;align-items:center}
@@ -36,69 +36,69 @@ html,body{width:600px;height:600px;overflow:hidden;background:#000;color:#fff;fo
   min-height:88px;
   padding:12px 20px;
   border:2px solid transparent;
-  color:#5A6570;
+  color:#8B949E;
   background:#000;
   cursor:pointer;
   text-align:center;
   user-select:none;
   outline:none;
-  transition:all 150ms ease;
+  transition:border-color 33ms step-end, color 33ms step-end, opacity 33ms step-end;
 }
 .focusable:focus{
-  outline:none;
+  outline:2px solid rgba(0,212,255,0.4);
+  outline-offset:4px;
   border-color:#00d4ff;
-  box-shadow:0 0 20px rgba(0,212,255,0.4);
   color:#fff;
 }
 .focusable:active{
-  background:#1a1a1a;
+  opacity:0.7;
 }
 .focusable.selected{
   color:#fff;
-  border-color:#5A6570;
+  border-color:#8B949E;
 }
 
 /* Count step */
 #count-display{font-size:72px;color:#fff;text-align:center;margin:16px 0}
-#count-unit{font-size:16px;color:#5A6570;text-align:center}
+#count-unit{font-size:18px;color:#8B949E;text-align:center}
 #count-controls{display:flex;justify-content:center;gap:24px;margin-top:16px}
 
 /* Danger frame */
 .danger-frame{background:#000;border:2px solid #E5484D;padding:24px}
 .danger-frame #prompt-text{color:#E5484D}
 .danger-frame .referral-text{font-size:28px;color:#fff;margin-top:16px;text-align:center}
-.danger-badge{font-size:16px;color:#E5484D;letter-spacing:1px;text-transform:uppercase}
+.danger-badge{font-size:18px;color:#E5484D;letter-spacing:1px;text-transform:uppercase}
 
 /* Completion */
 #complete-area{padding:24px;text-align:center;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:16px}
-#complete-area .done-label{font-size:16px;color:#00E5FF;letter-spacing:1px;text-transform:uppercase}
+#complete-area .done-label{font-size:18px;color:#00E5FF;letter-spacing:1px;text-transform:uppercase}
 #complete-area .done-text{font-size:28px;color:#fff}
-#complete-area .done-stats{font-size:16px;color:#5A6570;margin-top:8px}
-#complete-area .done-sync{font-size:16px;color:#5A6570;margin-top:16px}
+#complete-area .done-stats{font-size:18px;color:#8B949E;margin-top:8px}
+#complete-area .done-sync{font-size:18px;color:#8B949E;margin-top:16px}
 
 /* Bottom controls */
-#controls{height:192px;padding:24px;display:flex;flex-direction:column;justify-content:flex-end;border-top:1px solid #5A6570;flex-shrink:0}
-#controls .control-row{display:flex;justify-content:space-between;font-size:16px;color:#5A6570}
+#controls{height:192px;padding:24px;display:flex;flex-direction:column;justify-content:flex-end;border-top:1px solid #8B949E;flex-shrink:0}
+#controls .control-row{display:flex;justify-content:space-between;font-size:18px;color:#8B949E}
 #controls .key{color:#00E5FF}
-#controls .action{color:#5A6570}
+#controls .action{color:#8B949E}
 #controls .enter-row{margin-top:8px}
 
 /* Offline marker */
-#offline-marker{position:absolute;top:8px;right:24px;font-size:16px;color:#5A6570;display:none}
+#offline-marker{position:absolute;top:8px;right:24px;font-size:18px;color:#8B949E;display:none}
 
 /* Carry-forward hint (Property 4) */
-#carry-forward{font-size:16px;color:#00E5FF;margin-top:12px;opacity:0.7}
+#carry-forward{font-size:18px;color:#00E5FF;margin-top:12px;opacity:0.7}
 
 /* Idle state */
 #idle-area{padding:24px;text-align:center;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:24px}
 #idle-area .idle-household{font-size:36px;color:#fff}
-#idle-area .idle-protocol{font-size:16px;color:#5A6570;margin-top:4px}
-#idle-area .idle-triage{font-size:16px;color:#00E5FF;margin-top:8px;font-style:italic}
-#idle-area .idle-carry{font-size:16px;color:#5A6570;margin-top:8px}
-#idle-area .idle-controls{font-size:16px;color:#5A6570;margin-top:8px}
+#idle-area .idle-protocol{font-size:18px;color:#8B949E;margin-top:4px}
+#idle-area .idle-triage{font-size:18px;color:#00E5FF;margin-top:8px;font-style:italic}
+#idle-area .idle-carry{font-size:18px;color:#8B949E;margin-top:8px}
+#idle-area .idle-controls{font-size:18px;color:#8B949E;margin-top:8px}
 
 /* Resume indicator (Property 2) */
-#resume-indicator{font-size:16px;color:#00E5FF;margin-top:12px;opacity:0.8}
+#resume-indicator{font-size:18px;color:#00E5FF;margin-top:12px;opacity:0.8}
 
 /* Visually hidden */
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
@@ -213,7 +213,7 @@ var CARRY_KEY = 'dastak_carry';
 var protocol = null;
 var steps = {};
 var currentStepId = null;
-var history = [];
+var stepHistory = [];
 var answers = {};
 var startedAt = null;
 var completedAt = null;
@@ -224,6 +224,7 @@ var householdIndex = 0;
 var resumeStep = null;
 var resumeTime = null;
 var carryFlags = {};
+var navigatingViaPopstate = false;
 
 // ============================================================
 // FIX 1 per MCP docs: Focus management
@@ -254,7 +255,7 @@ function moveFocus(direction) {
   }
 
   focusables[next].focus();
-  focusables[next].scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  focusables[next].scrollIntoView({ block: 'nearest', behavior: 'instant' });
 }
 
 // --- Load protocol (single XHR at startup only) ---
@@ -392,7 +393,7 @@ function checkResume() {
       resumeTime = saved.savedAt;
       answers = saved.answers || {};
       flags = saved.flags || [];
-      history = saved.history || [];
+      stepHistory = saved.history || [];
     }
   } catch(e) {}
 }
@@ -404,7 +405,7 @@ function saveProgress() {
       stepId: currentStepId,
       answers: answers,
       flags: flags,
-      history: history,
+      history: stepHistory,
       savedAt: Date.now()
     }));
   } catch(e) {}
@@ -450,8 +451,8 @@ function showControls(type) {
 }
 
 function updateProgress(current, total) {
-  var pct = total > 0 ? (current / total) * 100 : 0;
-  document.getElementById('progress-fill').style.width = pct + '%';
+  var pct = total > 0 ? (current / total) : 0;
+  document.getElementById('progress-fill').style.transform = 'scaleX(' + pct + ')';
 }
 
 function updateStepInfo(current, total) {
@@ -480,7 +481,7 @@ function renderStep(stepId) {
 
   var stepIdx = getStepIndex(stepId);
   updateStepInfo(stepIdx.split(' of ')[0], stepIdx.split(' of ')[1]);
-  updateProgress(history.length, protocol.steps.length);
+  updateProgress(stepHistory.length, protocol.steps.length);
 
   saveProgress();
 
@@ -517,6 +518,11 @@ function renderStep(stepId) {
       state = 'info';
       showControls('info');
     }
+  }
+
+  // Push browser history entry for this screen
+  if (!navigatingViaPopstate) {
+    window.history.pushState({screen:'step', stepId: stepId}, '', '#step/' + stepId);
   }
 }
 
@@ -707,7 +713,7 @@ function advance() {
   var nextStep = getNextStep(step, answer);
 
   answers[currentStepId] = answer;
-  history.push(currentStepId);
+  stepHistory.push(currentStepId);
 
   if (step.danger) {
     flags.push({
@@ -734,10 +740,10 @@ function advance() {
 }
 
 function goBack() {
-  if (history.length < 2) return;
-  history.pop();
-  var prevStep = history.pop();
-  renderStep(prevStep);
+  if (stepHistory.length < 2) return;
+  stepHistory.pop();
+  // Let popstate handler render the previous step
+  window.history.back();
 }
 
 // ============================================================
@@ -754,7 +760,7 @@ function renderComplete() {
 
   show('complete-area');
   document.getElementById('done-stats').textContent =
-    history.length + ' steps · ' + flags.length + ' flags · ' + durStr;
+    stepHistory.length + ' steps · ' + flags.length + ' flags · ' + durStr;
 
   var household = ROSTER[householdIndex];
   var visitLabel = household.protocol;
@@ -766,7 +772,7 @@ function renderComplete() {
     protocol: household.protocol,
     answers: answers,
     flags: flags.map(function(f) { return { stepId: f.stepId, type: f.type, referral: f.referral }; }),
-    stepCount: history.length,
+    stepCount: stepHistory.length,
     flagCount: flags.length,
     durationMs: durationMs,
     startedAt: new Date(startedAt).toISOString(),
@@ -783,6 +789,11 @@ function renderComplete() {
   showControls('complete');
   updateProgress(protocol.steps.length, protocol.steps.length);
   document.getElementById('step-info').textContent = '';
+
+  // Push browser history entry for complete screen
+  if (!navigatingViaPopstate) {
+    window.history.pushState({screen:'complete'}, '', '#complete');
+  }
 }
 
 // ============================================================
@@ -854,7 +865,7 @@ function cycleHousehold(dir) {
 
 function startVisit() {
   startedAt = Date.now();
-  history = [];
+  stepHistory = [];
   answers = {};
   flags = [];
 
@@ -880,6 +891,29 @@ document.getElementById('idle-start').addEventListener('click', function(e) {
 // ============================================================
 var loadStart = Date.now();
 loadProtocol();
+window.history.replaceState({screen:'idle'}, '', '#idle');
+
+// ============================================================
+// Browser history navigation (popstate)
+// ============================================================
+window.addEventListener('popstate', function(e) {
+  navigatingViaPopstate = true;
+  if (!e.state || e.state.screen === 'idle') {
+    state = 'idle';
+    currentStepId = null;
+    show('idle-area');
+    showControls('idle');
+    computeIdle();
+  } else if (e.state.screen === 'step' && e.state.stepId && steps[e.state.stepId]) {
+    while (stepHistory.length > 0 && stepHistory[stepHistory.length - 1] !== e.state.stepId) {
+      stepHistory.pop();
+    }
+    renderStep(e.state.stepId);
+  } else if (e.state.screen === 'complete') {
+    renderComplete();
+  }
+  navigatingViaPopstate = false;
+});
 setTimeout(function() {
   var elapsed = Date.now() - loadStart;
   if (elapsed > 3000) {
