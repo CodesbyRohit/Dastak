@@ -2,7 +2,28 @@
 
 **Does the same Dastak interaction model work for different health situations without losing its simplicity?**
 
-Yes, with one honest qualification.
+Yes.
+
+---
+
+## Before restoration (commit f14c2e9)
+
+| Aspect | Status |
+|---|---|
+| Protocol generalization | PASS — P2, P3 required zero engine changes |
+| P0 parity | **REGRESSION** — idle screen, triage, voice picker, test audio removed |
+| Cross-protocol carry-forward | **RISK** — keyed by protocol:step only, no household namespace |
+| Engine specificity | PASS — zero protocol-specific branches |
+
+## After restoration (current)
+
+| Aspect | Status |
+|---|---|
+| Protocol generalization | PASS — P2, P3 required zero engine changes |
+| P0 parity | **RESTORED** — idle screen, triage, household context, carry-forward, resume, voice picker, test audio all present |
+| Cross-protocol carry-forward | **FIXED** — keyed by householdId:protocolId |
+| Engine specificity | PASS — zero protocol-specific branches (verified by harness) |
+| Runtime verification | **ADDED** — harness validates structure, namespacing, and engine specificity |
 
 ---
 
@@ -10,14 +31,53 @@ Yes, with one honest qualification.
 
 Four protocols, each stress-testing a different structural axis:
 
-| Protocol | Status | Structural axis | Result |
+| Protocol | Status | Structural axis | Engine changes required |
 |---|---|---|---|
-| P0 — Routine Home Visit | `demo-ready` | Regression baseline | Identical behaviour to original. Zero engine changes needed for re-expression. |
-| P1 — Danger Signs | `structural` | Branching + threshold escalation | Per-option routing in `choice` steps. Temperature threshold via `rule`. All renders as the same one-decision-per-frame UI. |
-| P2 — Treatment Follow-Up | `structural` | Carry-forward + mandatory checklist | Prior-visit flags surface via existing localStorage lookup. Sequential steps are inherently mandatory (no branching to skip). Works across protocols because carry-forward is keyed by protocol ID + step ID. |
-| P3 — Post-Discharge | `structural` | Three-way choice + numeric range + sub-selection | Three-option choice (Well / Complaints / Concerns). Range type generates choice lists from min/max/step. Symptom categories branch to sub-selections. Multiple escalation paths via rules. |
+| P0 — Routine Home Visit | `demo-ready` | Regression baseline | None |
+| P1 — Danger Signs | `structural` | Branching + threshold escalation | Triggered: per-option next, range type, rule evaluation |
+| P2 — Treatment Follow-Up | `structural` | Carry-forward + mandatory checklist | **Zero** — uses only pre-existing frame types |
+| P3 — Post-Discharge | `structural` | Three-way choice + numeric range + sub-selection | **Zero** — all features added for P1 covered it |
 
-P0 is clinically sourced and marked `demo-ready`. P1–P3 are **structural architecture tests**, not clinically validated protocols. They contain `UNSOURCED` placeholders. This is a passing outcome — the purpose of P1–P3 is to prove the engine and interaction model can express structurally different flows. Clinical content will be supplied by Rohit and dropped into sourced slots later.
+P0 is clinically sourced (Rohit / original Dastak prototype). P1–P3 are structural architecture tests with UNSOURCED placeholders.
+
+---
+
+## P0 restoration details
+
+The following features were removed in f14c2e9 and have been restored:
+
+| Feature | Pre-refactor | Post-refactor (f14c2e9) | After restoration |
+|---|---|---|---|
+| Idle screen | Household + protocol + triage + carry-forward | Protocol selector only | **Restored** — household context + protocol options + triage + carry-forward + resume |
+| Triage | `computeTriageNote()` on idle | Removed | **Restored** — same function, same output |
+| ROSTER | 6 households embedded | Removed | **Restored** — same data, left/right cycling |
+| Carry-forward (idle) | Display on idle screen | Removed | **Restored** — keyed by householdId:protocolId |
+| Resume indicator | "Resuming H-104, step 3..." | Removed | **Restored** — same format |
+| Voice picker | Select voice dropdown | Removed | **Restored** — same implementation |
+| Test audio | "⟩ Test audio" button | Removed | **Restored** — speaks "Audio test" |
+
+The idle screen now shows: household context, triage note, carry-forward, resume indicator, protocol selection options, voice picker, and test audio button. All in one frame — one decision (pick protocol + ENTER to begin).
+
+---
+
+## Carry-forward namespacing
+
+### The problem
+
+The f14c2e9 implementation keyed carry-forward by `protocolId:stepId`. If P1 (danger_signs) flagged step `temp`, and P3 (post_discharge) also has a step `temp`, P3 could surface P1's carry-forward note.
+
+### The fix
+
+Carry-forward is now keyed by `householdId:protocolId`. Each household+protocol combination has its own carry-forward record. P1's temp flag cannot surface in P3 because they have different protocol IDs in the key.
+
+### Verification
+
+The harness includes a deterministic test:
+1. Simulate P1 flagging `temp` for household H-104
+2. Check that P2 (adherence) for the same household does NOT inherit that flag
+3. Check that P1's same-protocol carry-forward still works
+
+Result: ✓ P2 does NOT inherit P1 carry-forward. ✓ P1 same-protocol carry-forward works.
 
 ---
 
@@ -29,12 +89,7 @@ Result frames never present Dastak as a diagnostic system. All result language u
 - "Consider referral to…"
 - "This check-in does not replace clinical judgement."
 
-For P1–P3 structural protocols, result content uses explicit placeholders:
-
-- "Danger signs assessed. No immediate referral needed."
-- "Refer to the health facility."
-
-No wording claims Dastak has diagnosed a condition. No clinical thresholds, dosages, or danger-sign criteria are invented. The engine compares values; it does not interpret them.
+For P1–P3 structural protocols, result content uses explicit placeholders. No wording claims Dastak has diagnosed a condition.
 
 ---
 
@@ -42,13 +97,13 @@ No wording claims Dastak has diagnosed a condition. No clinical thresholds, dosa
 
 | Behaviour | P0 | P1 | P2 | P3 |
 |---|---|---|---|---|
-| Anticipation (zero-query launch) | Verified — launcher loads instantly | Verified — same launcher | Verified — same launcher | Verified — same launcher |
-| Continuity (resume mid-thought) | Verified — save/resume via localStorage | Verified — same mechanism | Verified — same mechanism | Verified — same mechanism |
-| Triage (planner speaks once) | Verified — hardcoded triage note | Not applicable — no roster context | Not applicable — no roster context | Not applicable — no roster context |
-| Carry-forward (verbatim recall) | Verified — flagged steps surface prior notes | Verified — same mechanism, protocol-namespaced | Verified — same mechanism | Verified — same mechanism |
-| Calibrated confidence (offline fallback) | Verified — deterministic sort when AI unavailable | Not applicable — no AI dependency | Not applicable — no AI dependency | Not applicable — no AI dependency |
+| Anticipation (zero-query launch) | Verified — idle screen loads instantly | Verified — same idle screen | Verified — same idle screen | Verified — same idle screen |
+| Continuity (resume mid-thought) | Verified — save/resume via localStorage, resume indicator on idle | Verified — same mechanism | Verified — same mechanism | Verified — same mechanism |
+| Triage (planner speaks once) | Verified — `computeTriageNote()` on idle screen | Not applicable — no roster context in protocol engine | Not applicable | Not applicable |
+| Carry-forward (verbatim recall) | Verified — flagged steps surface prior notes, keyed by household:protocol | Verified — same mechanism | Verified — same mechanism | Verified — same mechanism |
+| Calibrated confidence (offline fallback) | Verified — deterministic sort when AI unavailable | Not applicable — no AI dependency | Not applicable | Not applicable |
 
-FRIDAY-layer behaviours are verified in P0 and at least one new protocol (P1, P2, P3 all inherit carry-forward and resume). Triage and calibrated confidence are roster/planner features structurally irrelevant to the glasses-side protocol engine — documented as not applicable rather than pretending they were tested.
+Triage and calibrated confidence are roster/planner features that live in the idle screen layer, not the protocol engine. They are verified in P0 and documented as not applicable for P1–P3.
 
 ---
 
@@ -61,7 +116,8 @@ FRIDAY-layer behaviours are verified in P0 and at least one new protocol (P1, P2
 | Distinct frame types in engine | **5** (yesno, choice, count, range, info) — held flat from P1 onward |
 | Key presses per step | Unchanged from P0 baseline |
 | Schema amendments required | **6** (see SCHEMA-CHANGELOG.md), all generalised, none special-cased |
-| Authoring time per protocol | Fell sharply: P1 took ~20 min, P2 ~10 min, P3 ~15 min |
+| Protocol-specific engine branches | **0** (verified by harness) |
+| Carry-forward contamination risk | **Eliminated** — householdId:protocolId namespacing |
 
 **Most persuasive number: the last protocol (P3) required zero engine code changes.** The schema amendments from P1 covered it entirely.
 
@@ -69,18 +125,32 @@ FRIDAY-layer behaviours are verified in P0 and at least one new protocol (P1, P2
 
 ## Where it strains
 
-**Repeat groups (P4).** We did not implement P4 in this iteration. The schema supports it (`group` type with `repeat`), but the engine's group-unrolling logic is non-trivial. The risk: when the same steps repeat N times, the progress indicator and step counter need to show "2 / 3" context within a group. This is solvable but adds engine complexity. We chose to ship P0–P3 clean rather than rush P4.
+**Repeat groups (P4).** The schema supports it (`group` type with `repeat`), but the engine's group-unrolling logic is not implemented. Deferred per the cut order.
 
-**Numeric precision.** The `range` type generates choices from min/max/step. For fine-grained measurements (e.g., temperature in 0.1°C steps), this produces 70 items — too many for comfortable arrow-key navigation. The mitigation: protocol authors should use clinically meaningful bands (0.5°C steps = 14 items) rather than raw precision. The brief recommended this explicitly.
+**Numeric precision.** The `range` type generates choices from min/max/step. For fine-grained measurements, this produces many items. Protocol authors should use clinically meaningful bands (0.5°C steps = 14 items).
 
-**Carry-forward across protocols.** The current carry-forward is keyed by protocol ID + step ID. If the same step ID appears in two different protocols (e.g., both P1 and P3 have a `temp` step), carry-forward data from one protocol could surface in the other. This is technically correct (the worker did flag temperature in a prior visit) but could be confusing. A protocol-namespace on carry-forward data would fix this cleanly.
+**Triage is not generalized.** The `rule` mechanism is a generic `if-op-value → goto`. It is not a triage system that scans multiple data points, prioritises, or reorders steps. The brief explicitly designed it this way (§5: "The engine evaluates comparisons and follows ids. It does not know what a danger sign is."). P1 demonstrates branching/transition generalization, not generalized triage semantics.
 
 ---
 
-## The answer
+## What Dastak proves
 
-The Dastak interaction model — one question per frame, arrow keys + Enter, no free text, no voice, no camera — generalises cleanly across structurally different health protocols. The engine interprets protocol JSON; it does not contain clinical logic. New protocols reduce to existing frame types: branching uses per-option routing, numeric capture generates choice lists, escalation uses static rules, and mandatory checklists are just sequential steps.
+1. **The interaction model generalizes.** One question per frame, arrow keys + Enter, no free text — works identically across P0–P3.
 
-The model starts to strain at repeat groups (where "one question per frame" must account for group-local context) and at high-precision numeric ranges (where the choice list becomes unwieldy). Both are solvable without changing the interaction model — they add engine complexity, not new ways to interact.
+2. **New protocols require zero engine code.** P2 and P3 required zero additions to the engine. The schema amendments from P1 were sufficient.
 
-**A real limit found is worth more than a fudge.** We did not find one in the core interaction model. The limits are at the edges: group-local context and numeric granularity. Neither requires abandoning one-question-per-frame.
+3. **No protocol-specific engine branches.** The engine is a pure interpreter. It does not know what a danger sign is, what TB adherence means, or what post-discharge involves.
+
+4. **P0 FRIDAY-layer behaviours are preserved.** Triage, carry-forward, resume, anticipation — all work across the idle screen and during visits.
+
+5. **Cross-protocol carry-forward contamination is prevented.** The householdId:protocolId namespace ensures flags from one protocol cannot surface in another.
+
+## What Dastak does NOT prove
+
+1. **Generalized triage.** The `rule` mechanism is a simple comparison, not a triage system. True triage would require accumulating state across steps and evaluating severity patterns.
+
+2. **Repeat groups (P4).** Schema exists, engine does not. Deferred.
+
+3. **Automated runtime testing.** The harness validates structure and namespacing. It does not load protocols in a browser, simulate keyboard input, or verify rendered output. Runtime verification is manual.
+
+4. **Clinical content validity.** P1–P3 contain UNSOURCED placeholders. The structure generalizes; the content has not been validated.

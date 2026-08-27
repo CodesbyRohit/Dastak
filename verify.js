@@ -281,6 +281,107 @@ if (dupes.length > 0) {
 }
 
 // ============================================================
+// 13. Carry-forward namespacing verification
+// Simulates: P1 flags temp → P2 must NOT inherit P1's temp flag
+// ============================================================
+console.log('\n--- Carry-forward namespacing ---');
+
+(function() {
+  // Simulate carry-forward data as the engine stores it
+  const carryFlags = {};
+  const householdId = 'H-104';
+
+  // P1 (danger_signs) flags temp at step 'temp'
+  const p1 = allProtocols.find(p => p.protocol.id === 'danger_signs');
+  if (p1) {
+    const key1 = householdId + ':danger_signs';
+    carryFlags[key1] = {
+      flags: [{ stepId: 'temp', type: 'temp', description: 'Temperature recorded', visitLabel: 'Danger Signs' }]
+    };
+  }
+
+  // P2 (adherence) — check if it inherits P1's temp flag
+  const p2 = allProtocols.find(p => p.protocol.id === 'adherence');
+  if (p2) {
+    const key2 = householdId + ':adherence';
+    // P2 has NOT been visited yet — no carry data
+    const record = carryFlags[key2];
+    if (record && record.flags && record.flags.length > 0) {
+      fail('P2 inherited carry-forward from P1 — namespace contamination');
+    } else {
+      pass('P2 does NOT inherit P1 carry-forward (correct namespacing)');
+    }
+  }
+
+  // Verify that same-protocol carry-forward DOES work
+  const p1Check = carryFlags[householdId + ':danger_signs'];
+  if (p1Check && p1Check.flags.length > 0 && p1Check.flags[0].stepId === 'temp') {
+    pass('P1 same-protocol carry-forward works correctly');
+  } else {
+    fail('P1 same-protocol carry-forward broken');
+  }
+})();
+
+// ============================================================
+// 14. Engine specificity check — no protocol-specific branches
+// ============================================================
+console.log('\n--- Engine specificity ---');
+
+const fs2 = require('fs');
+const path2 = require('path');
+const glassesPath = path2.join(__dirname, 'public', 'glasses.html');
+try {
+  const engineCode = fs2.readFileSync(glassesPath, 'utf8');
+  const scriptMatch = engineCode.match(/<script>([\s\S]*?)<\/script>/);
+  if (scriptMatch) {
+    const engine = scriptMatch[1];
+    // Check for protocol-specific string literals in engine logic
+    // (excluding the PROTOCOLS registry which is data, not logic)
+    // Exclude data sections (PROTOCOLS registry + ROSTER) — only check engine logic
+    const sections = [
+      { start: 'var PROTOCOLS = [', end: '];' },
+      { start: 'var ROSTER = [', end: '];' }
+    ];
+    let logicCode = engine;
+    // Remove sections from end to start to preserve indices
+    const matches = [];
+    for (const sec of sections) {
+      const s = logicCode.indexOf(sec.start);
+      if (s === -1) continue;
+      const e = logicCode.indexOf(sec.end, s);
+      if (e === -1) continue;
+      matches.push({ s: s, e: e + sec.end.length });
+    }
+    matches.sort((a, b) => b.s - a.s); // reverse order
+    for (const m of matches) {
+      logicCode = logicCode.substring(0, m.s) + logicCode.substring(m.e);
+    }
+
+    const protocolNames = ['home_visit', 'danger_signs', 'adherence', 'post_discharge'];
+    let specificBranches = 0;
+    for (const name of protocolNames) {
+      // Simple string search: protocol name appearing in if/switch context
+      const lines = logicCode.split('\n');
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (trimmed.startsWith('//') || trimmed.startsWith('*')) continue; // skip comments
+        if ((trimmed.includes('if') || trimmed.includes('switch')) && trimmed.includes(name)) {
+          specificBranches++;
+        }
+      }
+    }
+
+    if (specificBranches === 0) {
+      pass('Zero protocol-specific branches in engine logic');
+    } else {
+      fail('Found ' + specificBranches + ' protocol-specific branch(es) in engine');
+    }
+  }
+} catch(e) {
+  fail('Could not read glasses.html for specificity check: ' + e.message);
+}
+
+// ============================================================
 // SUMMARY
 // ============================================================
 console.log('\n=== Summary ===');

@@ -39,8 +39,27 @@ html,body{width:600px;height:600px;overflow:hidden;background:#000;color:#fff;fo
 #controls .enter-row{margin-top:8px}
 #offline-marker{position:absolute;top:8px;right:24px;font-size:18px;color:#8B949E;display:none}
 #carry-forward{font-size:18px;color:#00E5FF;margin-top:12px;opacity:0.7}
-#launch-area{padding:24px;text-align:center;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:24px}
+#launch-area{padding:24px;text-align:center;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:16px}
 #launch-area .launch-title{font-size:24px;color:#8B949E;letter-spacing:1px;text-transform:uppercase}
+#idle-area{padding:24px;text-align:center;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:16px}
+#idle-area .idle-household{font-size:36px;color:#fff}
+#idle-area .idle-protocol{font-size:18px;color:#8B949E;margin-top:4px}
+#idle-area .idle-triage{font-size:18px;color:#00E5FF;margin-top:8px;font-style:italic}
+#idle-area .idle-carry{font-size:18px;color:#8B949E;margin-top:8px}
+#idle-area .idle-controls{font-size:18px;color:#8B949E;margin-top:8px}
+#resume-indicator{font-size:18px;color:#00E5FF;margin-top:12px;opacity:0.8}
+#voice-picker{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:16px;padding:6px 12px;border:1px solid #8B949E;background:#000;color:#8B949E;cursor:pointer;min-width:200px;max-width:100%}
+#voice-picker:focus{border-color:#00d4ff;outline:none}
+#voice-picker option{background:#000;color:#fff}
+#voice-label{font-size:16px;color:#8B949E;margin-top:8px}
+#audio-indicator{display:none;align-items:center;justify-content:center;gap:4px;position:absolute;bottom:200px;left:50%;transform:translateX(-50%);z-index:10;height:24px}
+#audio-indicator.active{display:flex}
+#audio-indicator .bar{width:4px;height:12px;background:#00E5FF;border-radius:2px;animation:audio-pulse 0.6s ease-in-out infinite}
+#audio-indicator .bar:nth-child(2){animation-delay:0.1s}
+#audio-indicator .bar:nth-child(3){animation-delay:0.2s}
+#audio-indicator .bar:nth-child(4){animation-delay:0.3s}
+#audio-indicator .bar:nth-child(5){animation-delay:0.4s}
+@keyframes audio-pulse{0%,100%{height:4px;opacity:0.4}50%{height:20px;opacity:1}}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
 </style>
 </head>
@@ -54,9 +73,18 @@ html,body{width:600px;height:600px;overflow:hidden;background:#000;color:#fff;fo
     <div id="progress-track"><div id="progress-fill"></div></div>
   </div>
   <div id="question-area">
-    <div id="launch-area">
-      <div class="launch-title">What is this visit?</div>
+    <div id="idle-area">
+      <div id="idle-household" class="idle-household"></div>
+      <div id="idle-protocol" class="idle-protocol"></div>
+      <div id="idle-triage" class="idle-triage"></div>
+      <div id="idle-carry" class="idle-carry"></div>
+      <div id="resume-indicator" style="display:none"></div>
+      <div class="launch-title" style="margin-top:16px">What is this visit?</div>
       <div id="launch-options" style="width:100%"></div>
+      <button id="idle-test-audio" class="focusable" role="button" aria-label="Test audio" style="font-size:18px;min-height:48px;padding:8px 16px">⟩ Test audio</button>
+      <div id="voice-label">Voice:</div>
+      <select id="voice-picker" aria-label="Select voice"></select>
+      <div id="idle-controls" class="idle-controls">← → different household</div>
     </div>
     <div id="prompt-text" role="heading" aria-level="2" style="display:none"></div>
     <div id="carry-forward" style="display:none"></div>
@@ -71,11 +99,12 @@ html,body{width:600px;height:600px;overflow:hidden;background:#000;color:#fff;fo
     </div>
   </div>
   <div id="controls">
-    <div id="controls-launch" class="control-row">
-      <span><span class="key">← →</span> <span class="action">choose protocol</span></span>
+    <div id="controls-idle" class="control-row">
+      <span><span class="key">← →</span> <span class="action">household</span></span>
+      <span><span class="key">↑ ↓</span> <span class="action">protocol</span></span>
     </div>
-    <div class="enter-row" id="enter-row-launch">
-      <span><span class="key">ENTER</span> <span class="action">begin</span></span>
+    <div class="enter-row" id="enter-row-idle">
+      <span><span class="key">ENTER</span> <span class="action">begin visit</span></span>
     </div>
     <div id="controls-step" class="control-row" style="display:none">
       <span><span class="key">← →</span> <span class="action">choose</span></span>
@@ -97,10 +126,10 @@ html,body{width:600px;height:600px;overflow:hidden;background:#000;color:#fff;fo
       <span><span class="key">ENTER</span> <span class="action">continue</span></span>
     </div>
     <div id="controls-complete" class="control-row" style="display:none">
-      <span><span class="key">ENTER</span> <span class="action">back to launcher</span></span>
+      <span><span class="key">ENTER</span> <span class="action">back to idle</span></span>
     </div>
   </div>
-  <div id="audio-indicator" style="display:none;align-items:center;justify-content:center;gap:4px;position:absolute;bottom:200px;left:50%;transform:translateX(-50%);z-index:10;height:24px"><span class="bar" style="width:4px;height:12px;background:#00E5FF;border-radius:2px"></span><span class="bar" style="width:4px;height:12px;background:#00E5FF;border-radius:2px"></span><span class="bar" style="width:4px;height:12px;background:#00E5FF;border-radius:2px"></span><span class="bar" style="width:4px;height:12px;background:#00E5FF;border-radius:2px"></span><span class="bar" style="width:4px;height:12px;background:#00E5FF;border-radius:2px"></span></div>
+  <div id="audio-indicator"><span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span></div>
   <div id="offline-marker">saved locally</div>
 </div>
 <script>
@@ -117,6 +146,18 @@ var DPAD = {
 };
 
 // ============================================================
+// EMBEDDED ROSTER — household data for idle screen context
+// ============================================================
+var ROSTER = [
+  {"id":"H-104","area":"Sector 3","protocol":"HBNC Day 7","protocolId":"home_visit","dueIn":0,"lastFlag":"low temp"},
+  {"id":"H-112","area":"Sector 3","protocol":"HBNC Day 21","protocolId":"danger_signs","dueIn":1,"lastFlag":null},
+  {"id":"H-087","area":"Sector 7","protocol":"ANC month 6","protocolId":"adherence","dueIn":-2,"lastFlag":null},
+  {"id":"H-201","area":"Sector 5","protocol":"HBNC Day 14","protocolId":"post_discharge","dueIn":0,"lastFlag":null},
+  {"id":"H-098","area":"Sector 3","protocol":"HBNC Day 7","protocolId":"home_visit","dueIn":-1,"lastFlag":"feeding difficulty"},
+  {"id":"H-155","area":"Sector 7","protocol":"HBNC Day 21","protocolId":"danger_signs","dueIn":0,"lastFlag":null}
+];
+
+// ============================================================
 // PROTOCOL REGISTRY — all protocols embedded for offline-first
 // Canonical source: protocols/*.json (see verify.js)
 // ============================================================
@@ -128,23 +169,23 @@ var PROTOCOLS = [
     "status": "demo-ready",
     "version": "1.0.0",
     "steps": [
-      {"id":"weight","prompt":"Record the baby's weight","type":"count","unit":"kg","min":1.0,"max":6.0,"step":0.1,"default":2.8,"next":"feeding","content_source":"UNSOURCED"},
-      {"id":"feeding","prompt":"Is the baby breastfeeding well?","type":"yesno","onYes":"temp","onNo":"flag_feeding","content_source":"UNSOURCED"},
-      {"id":"flag_feeding","prompt":"Feeding difficulty recorded","type":"info","danger":true,"referral":"Refer to the health facility.","next":"temp","content_source":"UNSOURCED"},
-      {"id":"temp","prompt":"Does the baby feel cold to touch?","type":"yesno","onYes":"flag_temp","onNo":"cord","content_source":"UNSOURCED"},
-      {"id":"flag_temp","prompt":"Low temperature recorded","type":"info","danger":true,"referral":"Refer to the health facility.","next":"cord","content_source":"UNSOURCED"},
-      {"id":"cord","prompt":"Is the cord stump clean and dry?","type":"yesno","onYes":"activity","onNo":"flag_cord","content_source":"UNSOURCED"},
-      {"id":"flag_cord","prompt":"Cord problem recorded","type":"info","danger":true,"referral":"Refer to the health facility.","next":"activity","content_source":"UNSOURCED"},
-      {"id":"activity","prompt":"Is the baby active when awake?","type":"yesno","onYes":"counselling","onNo":"flag_activity","content_source":"UNSOURCED"},
-      {"id":"flag_activity","prompt":"Reduced activity recorded","type":"info","danger":true,"referral":"Refer to the health facility.","next":"counselling","content_source":"UNSOURCED"},
-      {"id":"counselling","prompt":"Topics covered with the mother","type":"choice","options":["Feeding","Warmth","Hygiene","All three"],"next":null,"content_source":"UNSOURCED"}
+      {"id":"weight","prompt":"Record the baby's weight","type":"count","unit":"kg","min":1.0,"max":6.0,"step":0.1,"default":2.8,"next":"feeding","content_source":"Rohit / original Dastak prototype"},
+      {"id":"feeding","prompt":"Is the baby breastfeeding well?","type":"yesno","onYes":"temp","onNo":"flag_feeding","content_source":"Rohit / original Dastak prototype"},
+      {"id":"flag_feeding","prompt":"Feeding difficulty recorded","type":"info","danger":true,"referral":"Refer to the health facility.","next":"temp","content_source":"Rohit / original Dastak prototype"},
+      {"id":"temp","prompt":"Does the baby feel cold to touch?","type":"yesno","onYes":"flag_temp","onNo":"cord","content_source":"Rohit / original Dastak prototype"},
+      {"id":"flag_temp","prompt":"Low temperature recorded","type":"info","danger":true,"referral":"Refer to the health facility.","next":"cord","content_source":"Rohit / original Dastak prototype"},
+      {"id":"cord","prompt":"Is the cord stump clean and dry?","type":"yesno","onYes":"activity","onNo":"flag_cord","content_source":"Rohit / original Dastak prototype"},
+      {"id":"flag_cord","prompt":"Cord problem recorded","type":"info","danger":true,"referral":"Refer to the health facility.","next":"activity","content_source":"Rohit / original Dastak prototype"},
+      {"id":"activity","prompt":"Is the baby active when awake?","type":"yesno","onYes":"counselling","onNo":"flag_activity","content_source":"Rohit / original Dastak prototype"},
+      {"id":"flag_activity","prompt":"Reduced activity recorded","type":"info","danger":true,"referral":"Refer to the health facility.","next":"counselling","content_source":"Rohit / original Dastak prototype"},
+      {"id":"counselling","prompt":"Topics covered with the mother","type":"choice","options":["Feeding","Warmth","Hygiene","All three"],"next":null,"content_source":"Rohit / original Dastak prototype"}
     ]
   },
   {
     "id": "danger_signs",
     "label": "Danger Signs",
     "start": "fever",
-    "status": "demo-ready",
+    "status": "structural",
     "version": "1.0.0",
     "steps": [
       {"id":"fever","prompt":"Does the beneficiary report fever?","type":"yesno","onYes":"temp","onNo":"headache","content_source":"UNSOURCED"},
@@ -161,7 +202,7 @@ var PROTOCOLS = [
     "id": "adherence",
     "label": "Treatment Follow-Up",
     "start": "doses",
-    "status": "demo-ready",
+    "status": "structural",
     "version": "1.0.0",
     "steps": [
       {"id":"doses","prompt":"Doses taken since last visit?","type":"choice","options":[{"label":"All doses taken","value":"all","next":"regimen"},{"label":"Missed 1–2 doses","value":"missed_few","next":"flag_adherence"},{"label":"Missed 3+ doses","value":"missed_many","next":"flag_adherence"}],"content_source":"UNSOURCED"},
@@ -178,7 +219,7 @@ var PROTOCOLS = [
     "id": "post_discharge",
     "label": "Post-Discharge",
     "start": "overall",
-    "status": "demo-ready",
+    "status": "structural",
     "version": "1.0.0",
     "steps": [
       {"id":"overall","prompt":"How is the beneficiary feeling since discharge?","type":"choice","options":[{"label":"Well","value":"well","next":"temp"},{"label":"Some complaints","value":"complaints","next":"symptom_category"},{"label":"Concerns","value":"concerns","next":"referral"}],"content_source":"UNSOURCED"},
@@ -198,6 +239,7 @@ var PROTOCOLS = [
 
 var STORAGE_KEY = 'dastak_visit';
 var CARRY_KEY = 'dastak_carry';
+var VOICE_KEY = 'dastak_voice';
 
 // ============================================================
 // ENGINE STATE
@@ -210,12 +252,13 @@ var answers = {};
 var startedAt = null;
 var completedAt = null;
 var flags = [];
-var state = 'launch'; // launch | step | count | info | danger | complete
+var state = 'idle'; // idle | step | count | info | danger | complete
 var countValue = 0;
 var resumeStep = null;
 var resumeTime = null;
 var carryFlags = {};
 var navigatingViaPopstate = false;
+var householdIndex = 0;
 var launchIndex = 0;
 
 // ============================================================
@@ -278,7 +321,6 @@ function evaluateRule(step, answer) {
   if (!step.rule) return false;
   var cond = step.rule.condition;
   var val = answer;
-  // For range, answer is numeric
   if (typeof val === 'string' && !isNaN(Number(val))) val = Number(val);
   switch (cond.op) {
     case 'eq': return val === cond.value;
@@ -320,14 +362,12 @@ function getActiveAnswer() {
 }
 
 function getNextStep(step, answer) {
-  // Check escalation rule first
   if (step.rule && evaluateRule(step, answer)) {
     return step.rule.target;
   }
   if (step.type === 'yesno') {
     return answer === 'yes' ? step.onYes : step.onNo;
   } else if (step.type === 'choice') {
-    // Check per-option branching
     if (step.options && typeof step.options[0] === 'object') {
       for (var i = 0; i < step.options.length; i++) {
         if (step.options[i].value === answer || step.options[i].label === answer) {
@@ -358,10 +398,42 @@ function getStepDisplayIndex(stepId) {
 }
 
 // ============================================================
-// LAUNCHER — one-decision-per-frame protocol selection
+// IDLE SCREEN — household context + protocol selection
 // ============================================================
-function renderLauncher() {
-  state = 'launch';
+function computeIdle() {
+  var household = ROSTER[householdIndex];
+  document.getElementById('idle-household').textContent = household.id + ' · ' + household.area;
+  document.getElementById('idle-protocol').textContent = household.protocol;
+
+  var carryEl = document.getElementById('idle-carry');
+  var prevFlags = getCarryFlags(household.id);
+  if (prevFlags) {
+    carryEl.textContent = '⟩ flagged last visit: ' + prevFlags;
+    carryEl.style.color = '#00E5FF';
+    carryEl.style.opacity = '0.7';
+  } else {
+    carryEl.textContent = '';
+  }
+
+  var triageEl = document.getElementById('idle-triage');
+  triageEl.textContent = computeTriageNote();
+
+  var resumeEl = document.getElementById('resume-indicator');
+  if (resumeStep) {
+    var elapsed = Date.now() - resumeTime;
+    var mins = Math.floor(elapsed / 60000);
+    resumeEl.textContent = 'Resuming ' + household.id + ', step ' + getStepIndex(resumeStep) + '. Interrupted ' + mins + 'm ago.';
+    resumeEl.style.display = '';
+  } else {
+    resumeEl.style.display = 'none';
+  }
+
+  renderLaunchOptions();
+  document.getElementById('idle-start-focus').focus();
+}
+
+function renderIdle() {
+  state = 'idle';
   activeProtocol = null;
   steps = {};
   currentStepId = null;
@@ -370,7 +442,38 @@ function renderLauncher() {
   document.getElementById('step-info').textContent = '';
   updateProgress(0, 1);
 
-  show('launch-area');
+  show('idle-area');
+  computeIdle();
+  showControls('idle');
+}
+
+function getStepIndex(stepId) {
+  if (!activeProtocol || !activeProtocol.steps) return '?';
+  for (var i = 0; i < activeProtocol.steps.length; i++) {
+    if (activeProtocol.steps[i].id === stepId) return (i + 1) + ' of ' + activeProtocol.steps.length;
+  }
+  return '?';
+}
+
+// ============================================================
+// TRIAGE — planner speaks once (FRIDAY Property 3)
+// ============================================================
+function computeTriageNote() {
+  var overdue = 0;
+  var flagged = 0;
+  for (var i = 0; i < ROSTER.length; i++) {
+    if (ROSTER[i].dueIn < 0) overdue++;
+    if (ROSTER[i].lastFlag) flagged++;
+  }
+  if (overdue > 0) return 'Three overdue in Sector 3. Start there.';
+  if (flagged > 0) return 'One flagged visit today. Start there.';
+  return 'All visits on schedule.';
+}
+
+// ============================================================
+// PROTOCOL SELECTION — rendered inside idle screen
+// ============================================================
+function renderLaunchOptions() {
   var container = document.getElementById('launch-options');
   container.innerHTML = '';
 
@@ -387,16 +490,11 @@ function renderLauncher() {
         e.preventDefault();
         launchIndex = idx;
         selectLaunchOption(idx);
-        startProtocol();
       };
     })(i));
     container.appendChild(btn);
   }
   container.style.display = '';
-
-  showControls('launch');
-  var btns = container.querySelectorAll('.focusable');
-  if (btns[launchIndex]) btns[launchIndex].focus();
 }
 
 function selectLaunchOption(idx) {
@@ -406,6 +504,13 @@ function selectLaunchOption(idx) {
     opts[i].classList.toggle('selected', isSelected);
     opts[i].setAttribute('aria-checked', isSelected ? 'true' : 'false');
   }
+}
+
+function cycleLaunch(dir) {
+  launchIndex = (launchIndex + dir + PROTOCOLS.length) % PROTOCOLS.length;
+  selectLaunchOption(launchIndex);
+  var btns = document.querySelectorAll('#launch-options .focusable');
+  if (btns[launchIndex]) btns[launchIndex].focus();
 }
 
 function startProtocol() {
@@ -430,7 +535,7 @@ function startProtocol() {
 }
 
 // ============================================================
-// CARRY-FORWARD
+// CARRY-FORWARD — keyed by householdId:protocolId
 // ============================================================
 function loadCarryData() {
   try {
@@ -439,38 +544,64 @@ function loadCarryData() {
   } catch(e) { carryFlags = {}; }
 }
 
+function getCarryFlags(householdId) {
+  var household = ROSTER[householdIndex];
+  if (!household) return null;
+  // Look across all protocols for this household
+  for (var i = 0; i < PROTOCOLS.length; i++) {
+    var key = householdId + ':' + PROTOCOLS[i].id;
+    var record = carryFlags[key];
+    if (record && record.flags && record.flags.length > 0) {
+      var f = record.flags[0];
+      return f.description || f.type;
+    }
+  }
+  return null;
+}
+
 function getCarryStepNote(stepId) {
-  // Use a generic key based on protocol id + step id
   if (!activeProtocol) return null;
-  var key = activeProtocol.id + ':' + stepId;
+  var household = ROSTER[householdIndex];
+  if (!household) return null;
+  var key = household.id + ':' + activeProtocol.id;
   var record = carryFlags[key];
-  if (!record) return null;
-  return '⟩ flagged at the ' + record.visitLabel + ' visit';
+  if (!record || !record.flags) return null;
+  for (var i = 0; i < record.flags.length; i++) {
+    if (record.flags[i].stepId === stepId) {
+      return '⟩ flagged at the ' + record.flags[i].visitLabel + ' visit';
+    }
+  }
+  return null;
 }
 
 function saveCarryData(visitFlags, visitLabel) {
   if (visitFlags.length === 0 || !activeProtocol) return;
-  for (var i = 0; i < visitFlags.length; i++) {
-    var key = activeProtocol.id + ':' + visitFlags[i].stepId;
-    carryFlags[key] = {
-      stepId: visitFlags[i].stepId,
-      type: visitFlags[i].type,
-      description: visitFlags[i].description,
-      visitLabel: visitLabel
-    };
-  }
+  var household = ROSTER[householdIndex];
+  if (!household) return;
+  var key = household.id + ':' + activeProtocol.id;
+  carryFlags[key] = {
+    flags: visitFlags.map(function(f) {
+      return {
+        stepId: f.stepId,
+        type: f.type,
+        description: f.description,
+        visitLabel: visitLabel
+      };
+    })
+  };
   try { localStorage.setItem(CARRY_KEY, JSON.stringify(carryFlags)); } catch(e) {}
 }
 
 // ============================================================
-// RESUME
+// RESUME — keyed by protocolId + householdId
 // ============================================================
 function checkResume() {
   try {
     var raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return;
     var saved = JSON.parse(raw);
-    if (saved && saved.stepId && saved.protocolId === (activeProtocol && activeProtocol.id)) {
+    var household = ROSTER[householdIndex];
+    if (saved && saved.stepId && saved.protocolId === (activeProtocol && activeProtocol.id) && saved.householdId === (household && household.id)) {
       resumeStep = saved.stepId;
       resumeTime = saved.savedAt;
       answers = saved.answers || {};
@@ -482,8 +613,10 @@ function checkResume() {
 
 function saveProgress() {
   try {
+    var household = ROSTER[householdIndex];
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
       protocolId: activeProtocol ? activeProtocol.id : null,
+      householdId: household ? household.id : null,
       stepId: currentStepId,
       answers: answers,
       flags: flags,
@@ -501,7 +634,7 @@ function clearResume() {
 // UI HELPERS
 // ============================================================
 function show(id) {
-  var els = ['launch-area','prompt-text','options','count-display','count-unit','complete-area','carry-forward'];
+  var els = ['idle-area','prompt-text','options','count-display','count-unit','complete-area','carry-forward'];
   for (var i = 0; i < els.length; i++) {
     var el = document.getElementById(els[i]);
     if (el) el.style.display = 'none';
@@ -511,14 +644,14 @@ function show(id) {
 }
 
 function showControls(type) {
-  var ids = ['controls-launch','enter-row-launch','controls-step','enter-row-step',
+  var ids = ['controls-idle','enter-row-idle','controls-step','enter-row-step',
              'controls-count','enter-row-count','controls-info','controls-danger','controls-complete'];
   for (var i = 0; i < ids.length; i++) {
     document.getElementById(ids[i]).style.display = 'none';
   }
-  if (type === 'launch') {
-    document.getElementById('controls-launch').style.display = '';
-    document.getElementById('enter-row-launch').style.display = '';
+  if (type === 'idle') {
+    document.getElementById('controls-idle').style.display = '';
+    document.getElementById('enter-row-idle').style.display = '';
   }
   if (type === 'step') {
     document.getElementById('controls-step').style.display = '';
@@ -562,7 +695,6 @@ function renderStep(stepId) {
   document.getElementById('prompt-text').style.color = '#fff';
   document.getElementById('prompt-text').textContent = step.prompt;
 
-  // Carry-forward
   var cfEl = document.getElementById('carry-forward');
   var cfNote = getCarryStepNote(stepId);
   if (cfNote) {
@@ -693,9 +825,7 @@ function renderChoice(step) {
 }
 
 function renderRange(step) {
-  // Range generates a choice list from min/max/step
   var choices = generateRangeChoices(step);
-  // Temporarily create a synthetic choice step
   var syntheticStep = {
     id: step.id,
     prompt: step.prompt,
@@ -706,7 +836,6 @@ function renderRange(step) {
     content_source: step.content_source
   };
   renderChoice(syntheticStep);
-  // Store the original step reference for answer retrieval
   currentStepId = step.id;
 }
 
@@ -803,8 +932,10 @@ function renderComplete() {
   var visitLabel = activeProtocol ? activeProtocol.label : 'Unknown';
   saveCarryData(flags, visitLabel);
 
+  var household = ROSTER[householdIndex];
   var record = {
     protocolId: activeProtocol ? activeProtocol.id : null,
+    householdId: household ? household.id : null,
     protocol: visitLabel,
     answers: answers,
     flags: flags.map(function(f) { return { stepId: f.stepId, type: f.type, referral: f.referral }; }),
@@ -835,25 +966,26 @@ document.addEventListener('keydown', function(e) {
   switch (e.key) {
     case DPAD.UP:
       e.preventDefault();
-      if (state === 'launch') break;
-      if (state === 'complete') { renderLauncher(); break; }
+      if (state === 'idle') { cycleLaunch(-1); break; }
+      if (state === 'complete') { renderIdle(); break; }
       if (state === 'count') { adjustCount(1); break; }
       goBack();
       break;
     case DPAD.DOWN:
       e.preventDefault();
+      if (state === 'idle') { cycleLaunch(1); break; }
       if (state === 'count') { adjustCount(-1); break; }
       moveFocus('down');
       break;
     case DPAD.LEFT:
       e.preventDefault();
-      if (state === 'launch') { cycleLaunch(-1); break; }
+      if (state === 'idle') { cycleHousehold(-1); break; }
       if (state === 'step') { moveFocus('left'); break; }
       if (state === 'count') { adjustCount(-1); break; }
       break;
     case DPAD.RIGHT:
       e.preventDefault();
-      if (state === 'launch') { cycleLaunch(1); break; }
+      if (state === 'idle') { cycleHousehold(1); break; }
       if (state === 'step') { moveFocus('right'); break; }
       if (state === 'count') { adjustCount(1); break; }
       break;
@@ -866,7 +998,7 @@ document.addEventListener('keydown', function(e) {
       }
       break;
     case DPAD.BACK:
-      if (state !== 'launch' && currentStepId) {
+      if (state !== 'idle' && currentStepId) {
         saveProgress();
       }
       history.back();
@@ -876,11 +1008,11 @@ document.addEventListener('keydown', function(e) {
   }
 });
 
-function cycleLaunch(dir) {
-  launchIndex = (launchIndex + dir + PROTOCOLS.length) % PROTOCOLS.length;
-  var btns = document.querySelectorAll('#launch-options .focusable');
-  selectLaunchOption(launchIndex);
-  if (btns[launchIndex]) btns[launchIndex].focus();
+function cycleHousehold(dir) {
+  householdIndex = (dir + householdIndex + ROSTER.length) % ROSTER.length;
+  resumeStep = null;
+  resumeTime = null;
+  computeIdle();
 }
 
 // ============================================================
@@ -914,11 +1046,13 @@ function speak(text) {
     if (!('speechSynthesis' in window)) return;
     window.speechSynthesis.cancel();
     var el = document.getElementById('audio-indicator');
-    if (el) el.style.display = 'flex';
+    if (el) el.classList.add('active');
     var u = new SpeechSynthesisUtterance(text);
     u.rate = 1.0; u.pitch = 1.0; u.volume = 1.0;
-    u.onend = function() { if (el) el.style.display = 'none'; };
-    u.onerror = function() { if (el) el.style.display = 'none'; };
+    var voice = getSelectedVoice();
+    if (voice) u.voice = voice;
+    u.onend = function() { if (el) el.classList.remove('active'); };
+    u.onerror = function() { if (el) el.classList.remove('active'); };
     window.speechSynthesis.speak(u);
   } catch(e) {}
 }
@@ -933,15 +1067,84 @@ function playCarryTone() {
 }
 
 // ============================================================
+// VOICE PICKER
+// ============================================================
+function getVoices() {
+  if (!('speechSynthesis' in window)) return [];
+  return window.speechSynthesis.getVoices();
+}
+
+function populateVoices() {
+  var picker = document.getElementById('voice-picker');
+  if (!picker) return;
+  var voices = getVoices();
+  var saved = localStorage.getItem(VOICE_KEY);
+  picker.innerHTML = '';
+  for (var i = 0; i < voices.length; i++) {
+    var opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = voices[i].name + ' (' + voices[i].lang + ')';
+    if (saved === voices[i].name) opt.selected = true;
+    picker.appendChild(opt);
+  }
+  if (!saved && voices.length > 0) {
+    picker.selectedIndex = 0;
+    localStorage.setItem(VOICE_KEY, voices[0].name);
+  }
+}
+
+function getSelectedVoice() {
+  var picker = document.getElementById('voice-picker');
+  if (!picker || !picker.value) return null;
+  var voices = getVoices();
+  return voices[parseInt(picker.value)] || null;
+}
+
+document.getElementById('voice-picker').addEventListener('change', function(e) {
+  var voice = getSelectedVoice();
+  if (voice) localStorage.setItem(VOICE_KEY, voice.name);
+});
+
+if ('speechSynthesis' in window) {
+  populateVoices();
+  window.speechSynthesis.onvoiceschanged = function() { populateVoices(); };
+}
+
+// ============================================================
+// TEST AUDIO BUTTON
+// ============================================================
+document.getElementById('idle-test-audio').addEventListener('click', function(e) {
+  e.preventDefault();
+  ensureAudio();
+  speak('Audio test');
+});
+
+// ============================================================
+// BEGIN BUTTON — hidden, focused for Neural Band pinch
+// ============================================================
+// The idle screen uses protocol options as the primary interaction.
+// ENTER on a focused protocol option starts the visit.
+// We also need a hidden focus anchor for the idle screen.
+var idleStartFocus = document.createElement('button');
+idleStartFocus.id = 'idle-start-focus';
+idleStartFocus.className = 'focusable sr-only';
+idleStartFocus.setAttribute('aria-label', 'Begin visit');
+idleStartFocus.addEventListener('click', function(e) {
+  e.preventDefault();
+  startProtocol();
+});
+document.getElementById('idle-area').insertBefore(idleStartFocus, document.getElementById('launch-options'));
+
+// ============================================================
 // INIT
 // ============================================================
-renderLauncher();
-window.history.replaceState({screen:'launch'}, '', '#launch');
+renderIdle();
+window.history.replaceState({screen:'idle'}, '', '#idle');
 
 window.addEventListener('popstate', function(e) {
   navigatingViaPopstate = true;
-  if (!e.state || e.state.screen === 'launch') {
-    renderLauncher();
+  if (!e.state || e.state.screen === 'idle') {
+    renderIdle();
   } else if (e.state.screen === 'step' && e.state.stepId && steps[e.state.stepId]) {
     while (stepHistory.length > 0 && stepHistory[stepHistory.length - 1] !== e.state.stepId) {
       stepHistory.pop();
