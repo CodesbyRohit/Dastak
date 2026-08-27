@@ -1,0 +1,81 @@
+{
+  "id": "danger_signs",
+  "label": "Danger Signs",
+  "start": "fever",
+  "status": "structural",
+  "version": "1.0.0",
+  "steps": [
+    {
+      "id": "fever",
+      "prompt": "Does the beneficiary report fever?",
+      "type": "yesno",
+      "onYes": "temp",
+      "onNo": "headache",
+      "content_source": "UNSOURCED"
+    },
+    {
+      "id": "temp",
+      "prompt": "Record the beneficiary's temperature",
+      "type": "range",
+      "min": 35.0,
+      "max": 42.0,
+      "step": 0.5,
+      "unit": "°C",
+      "default": 36.5,
+      "next": "headache",
+      "rule": {
+        "condition": { "op": "gt", "value": 38.5 },
+        "target": "referral"
+      },
+      "content_source": "UNSOURCED"
+    },
+    {
+      "id": "headache",
+      "prompt": "Does the beneficiary report severe headache?",
+      "type": "yesno",
+      "onYes": "stiff_neck",
+      "onNo": "rash",
+      "content_source": "UNSOURCED"
+    },
+    {
+      "id": "stiff_neck",
+      "prompt": "Does the beneficiary report stiff neck?",
+      "type": "yesno",
+      "onYes": "referral",
+      "onNo": "rash",
+      "content_source": "UNSOURCED"
+    },
+    {
+      "id": "rash",
+      "prompt": "Does the beneficiary report rash?",
+      "type": "yesno",
+      "onYes": "referral",
+      "onNo": "breathing",
+      "content_source": "UNSOURCED"
+    },
+    {
+      "id": "breathing",
+      "prompt": "Is the beneficiary breathing with difficulty?",
+      "type": "yesno",
+      "onYes": "referral",
+      "onNo": "complete",
+      "content_source": "UNSOURCED"
+    },
+    {
+      "id": "complete",
+      "prompt": "Danger signs assessed. No immediate referral needed.",
+      "type": "info",
+      "next": null,
+      "content_source": "UNSOURCED"
+    },
+    {
+      "id": "referral",
+      "prompt": "Refer to the health facility.",
+      "type": "info",
+      "danger": true,
+      "referral": "This check-in does not replace clinical judgement.",
+      "next": null,
+      "content_source": "UNSOURCED"
+    }
+  ]
+}

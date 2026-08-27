@@ -1,0 +1,137 @@
+{
+  "id": "post_discharge",
+  "label": "Post-Discharge",
+  "start": "overall",
+  "status": "structural",
+  "version": "1.0.0",
+  "steps": [
+    {
+      "id": "overall",
+      "prompt": "How is the beneficiary feeling since discharge?",
+      "type": "choice",
+      "options": [
+        { "label": "Well", "value": "well", "next": "temp" },
+        { "label": "Some complaints", "value": "complaints", "next": "symptom_category" },
+        { "label": "Concerns", "value": "concerns", "next": "referral" }
+      ],
+      "content_source": "UNSOURCED"
+    },
+    {
+      "id": "symptom_category",
+      "prompt": "Primary concern?",
+      "type": "choice",
+      "options": [
+        { "label": "Pain", "value": "pain", "next": "pain_detail" },
+        { "label": "Bleeding", "value": "bleeding", "next": "bleeding_detail" },
+        { "label": "Fever", "value": "fever", "next": "fever_temp" },
+        { "label": "Wound problem", "value": "wound", "next": "wound_detail" }
+      ],
+      "content_source": "UNSOURCED"
+    },
+    {
+      "id": "pain_detail",
+      "prompt": "Where is the pain?",
+      "type": "choice",
+      "options": ["Abdominal", "Head", "Chest", "Back"],
+      "next": "temp",
+      "content_source": "UNSOURCED"
+    },
+    {
+      "id": "bleeding_detail",
+      "prompt": "Severity of bleeding?",
+      "type": "choice",
+      "options": [
+        { "label": "Light spotting", "value": "light", "next": "temp" },
+        { "label": "Moderate", "value": "moderate", "next": "temp" },
+        { "label": "Heavy", "value": "heavy", "next": "referral" }
+      ],
+      "content_source": "UNSOURCED"
+    },
+    {
+      "id": "fever_temp",
+      "prompt": "Record the beneficiary's temperature",
+      "type": "range",
+      "min": 35.0,
+      "max": 42.0,
+      "step": 0.5,
+      "unit": "°C",
+      "default": 36.5,
+      "next": "temp",
+      "rule": {
+        "condition": { "op": "gt", "value": 38.5 },
+        "target": "referral"
+      },
+      "content_source": "UNSOURCED"
+    },
+    {
+      "id": "wound_detail",
+      "prompt": "Wound condition?",
+      "type": "choice",
+      "options": [
+        { "label": "Clean and dry", "value": "clean", "next": "temp" },
+        { "label": "Redness", "value": "redness", "next": "referral" },
+        { "label": "Discharge", "value": "discharge", "next": "referral" },
+        { "label": "Opening", "value": "opening", "next": "referral" }
+      ],
+      "content_source": "UNSOURCED"
+    },
+    {
+      "id": "temp",
+      "prompt": "Record the beneficiary's temperature",
+      "type": "range",
+      "min": 35.0,
+      "max": 42.0,
+      "step": 0.5,
+      "unit": "°C",
+      "default": 36.5,
+      "next": "bp",
+      "rule": {
+        "condition": { "op": "gt", "value": 38.5 },
+        "target": "referral"
+      },
+      "content_source": "UNSOURCED"
+    },
+    {
+      "id": "bp",
+      "prompt": "Record systolic blood pressure",
+      "type": "range",
+      "min": 80,
+      "max": 200,
+      "step": 5,
+      "unit": "mmHg",
+      "default": 120,
+      "next": "plan",
+      "rule": {
+        "condition": { "op": "gt", "value": 140 },
+        "target": "flag_bp"
+      },
+      "content_source": "UNSOURCED"
+    },
+    {
+      "id": "flag_bp",
+      "prompt": "Elevated blood pressure recorded",
+      "type": "info",
+      "danger": true,
+      "referral": "Monitor blood pressure closely.",
+      "next": "plan",
+      "content_source": "UNSOURCED"
+    },
+    {
+      "id": "plan",
+      "prompt": "Follow-up plan discussed",
+      "type": "choice",
+      "options": ["Return in 1 week", "Return in 2 weeks", "Next scheduled visit"],
+      "next": null,
+      "content_source": "UNSOURCED"
+    },
+    {
+      "id": "referral",
+      "prompt": "Refer to the health facility.",
+      "type": "info",
+      "danger": true,
+      "referral": "This check-in does not replace clinical judgement.",
+      "next": null,
+      "content_source": "UNSOURCED"
+    }
+  ]
+}

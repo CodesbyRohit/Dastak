@@ -9,7 +9,8 @@ var APP_SHELL = [
   '/plan.html',
   '/review.html',
   '/icon.png',
-  '/icon-96.png'
+  '/icon-96.png',
+  '/index.html'
 ];
 
 // Stage 1: Install — precache app shell

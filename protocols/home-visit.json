@@ -1,0 +1,97 @@
+{
+  "id": "home_visit",
+  "label": "Routine Home Visit",
+  "start": "weight",
+  "status": "demo-ready",
+  "version": "1.0.0",
+  "steps": [
+    {
+      "id": "weight",
+      "prompt": "Record the baby's weight",
+      "type": "count",
+      "unit": "kg",
+      "min": 1.0,
+      "max": 6.0,
+      "step": 0.1,
+      "default": 2.8,
+      "next": "feeding",
+      "content_source": "Rohit / original Dastak prototype"
+    },
+    {
+      "id": "feeding",
+      "prompt": "Is the baby breastfeeding well?",
+      "type": "yesno",
+      "onYes": "temp",
+      "onNo": "flag_feeding",
+      "content_source": "Rohit / original Dastak prototype"
+    },
+    {
+      "id": "flag_feeding",
+      "prompt": "Feeding difficulty recorded",
+      "type": "info",
+      "danger": true,
+      "referral": "Refer to the health facility.",
+      "next": "temp",
+      "content_source": "Rohit / original Dastak prototype"
+    },
+    {
+      "id": "temp",
+      "prompt": "Does the baby feel cold to touch?",
+      "type": "yesno",
+      "onYes": "flag_temp",
+      "onNo": "cord",
+      "content_source": "Rohit / original Dastak prototype"
+    },
+    {
+      "id": "flag_temp",
+      "prompt": "Low temperature recorded",
+      "type": "info",
+      "danger": true,
+      "referral": "Refer to the health facility.",
+      "next": "cord",
+      "content_source": "Rohit / original Dastak prototype"
+    },
+    {
+      "id": "cord",
+      "prompt": "Is the cord stump clean and dry?",
+      "type": "yesno",
+      "onYes": "activity",
+      "onNo": "flag_cord",
+      "content_source": "Rohit / original Dastak prototype"
+    },
+    {
+      "id": "flag_cord",
+      "prompt": "Cord problem recorded",
+      "type": "info",
+      "danger": true,
+      "referral": "Refer to the health facility.",
+      "next": "activity",
+      "content_source": "Rohit / original Dastak prototype"
+    },
+    {
+      "id": "activity",
+      "prompt": "Is the baby active when awake?",
+      "type": "yesno",
+      "onYes": "counselling",
+      "onNo": "flag_activity",
+      "content_source": "Rohit / original Dastak prototype"
+    },
+    {
+      "id": "flag_activity",
+      "prompt": "Reduced activity recorded",
+      "type": "info",
+      "danger": true,
+      "referral": "Refer to the health facility.",
+      "next": "counselling",
+      "content_source": "Rohit / original Dastak prototype"
+    },
+    {
+      "id": "counselling",
+      "prompt": "Topics covered with the mother",
+      "type": "choice",
+      "options": ["Feeding", "Warmth", "Hygiene", "All three"],
+      "next": null,
+      "content_source": "Rohit / original Dastak prototype"
+    }
+  ]
+}

@@ -5,157 +5,64 @@
 <meta name="mrbd-web-app-capable" content="yes">
 <meta name="viewport" content="width=600, height=600, initial-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#000000">
-<meta name="description" content="Home visit protocol companion for field health workers">
+<meta name="description" content="Multi-protocol health visit companion for field health workers">
 <link rel="icon" type="image/png" href="/icon-96.png" sizes="96x96">
 <title>Dastak</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{width:600px;height:600px;overflow:hidden;background:#000;color:#fff;font-family:ui-monospace,"SF Mono",Menlo,monospace;-webkit-font-smoothing:antialiased}
-
 #app{width:600px;height:600px;display:flex;flex-direction:column;position:relative}
-
-/* Context band */
 #context{height:72px;padding:0 24px;display:flex;flex-direction:column;justify-content:center;border-bottom:1px solid #8B949E;flex-shrink:0}
 #context .label{font-size:18px;color:#8B949E;letter-spacing:1px;text-transform:uppercase}
 #context .step-info{font-size:18px;color:#8B949E;text-align:right}
 #context .header-row{display:flex;justify-content:space-between;align-items:center}
 #progress-track{width:100%;height:2px;background:#1a1a1a;margin-top:8px;flex-shrink:0}
 #progress-fill{height:100%;background:#00E5FF;width:100%;transform:scaleX(0);transform-origin:left;transition:transform 0.33s steps(10);will-change:transform}
-
-/* Main question area */
 #question-area{flex:1;padding:24px;display:flex;flex-direction:column;justify-content:center;align-items:center}
 #prompt-text{font-size:36px;text-align:center;line-height:1.3;color:#fff;max-width:540px}
-
-/* Options area */
 #options{padding:0 24px 24px;display:flex;flex-direction:column;gap:12px;flex-shrink:0}
-
-/* FIX 1 per MCP docs: .focusable class pattern */
-.focusable{
-  font-family:ui-monospace,"SF Mono",Menlo,monospace;
-  font-size:28px;
-  min-height:88px;
-  padding:12px 20px;
-  border:2px solid transparent;
-  color:#8B949E;
-  background:#000;
-  cursor:pointer;
-  text-align:center;
-  user-select:none;
-  outline:none;
-  transition:border-color 33ms step-end, color 33ms step-end, opacity 33ms step-end;
-}
-.focusable:focus{
-  outline:2px solid rgba(0,212,255,0.4);
-  outline-offset:4px;
-  border-color:#00d4ff;
-  color:#fff;
-}
-.focusable:active{
-  opacity:0.7;
-}
-.focusable.selected{
-  color:#fff;
-  border-color:#8B949E;
-}
-
-/* Count step */
+.focusable{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:28px;min-height:88px;padding:12px 20px;border:2px solid transparent;color:#8B949E;background:#000;cursor:pointer;text-align:center;user-select:none;outline:none;transition:border-color 33ms step-end,color 33ms step-end,opacity 33ms step-end}
+.focusable:focus{outline:2px solid rgba(0,212,255,0.4);outline-offset:4px;border-color:#00d4ff;color:#fff}
+.focusable:active{opacity:0.7}
+.focusable.selected{color:#fff;border-color:#8B949E}
 #count-display{font-size:72px;color:#fff;text-align:center;margin:16px 0}
 #count-unit{font-size:18px;color:#8B949E;text-align:center}
-#count-controls{display:flex;justify-content:center;gap:24px;margin-top:16px}
-
-/* Danger frame */
-.danger-frame{background:#000;border:2px solid #E5484D;padding:24px}
-.danger-frame #prompt-text{color:#E5484D}
-.danger-frame .referral-text{font-size:28px;color:#fff;margin-top:16px;text-align:center}
-.danger-badge{font-size:18px;color:#E5484D;letter-spacing:1px;text-transform:uppercase}
-
-/* Completion */
 #complete-area{padding:24px;text-align:center;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:16px}
 #complete-area .done-label{font-size:18px;color:#00E5FF;letter-spacing:1px;text-transform:uppercase}
 #complete-area .done-text{font-size:28px;color:#fff}
 #complete-area .done-stats{font-size:18px;color:#8B949E;margin-top:8px}
 #complete-area .done-sync{font-size:18px;color:#8B949E;margin-top:16px}
-
-/* Bottom controls */
 #controls{height:192px;padding:24px;display:flex;flex-direction:column;justify-content:flex-end;border-top:1px solid #8B949E;flex-shrink:0}
 #controls .control-row{display:flex;justify-content:space-between;font-size:18px;color:#8B949E}
 #controls .key{color:#00E5FF}
 #controls .action{color:#8B949E}
 #controls .enter-row{margin-top:8px}
-
-/* Offline marker */
 #offline-marker{position:absolute;top:8px;right:24px;font-size:18px;color:#8B949E;display:none}
-
-/* Carry-forward hint (Property 4) */
 #carry-forward{font-size:18px;color:#00E5FF;margin-top:12px;opacity:0.7}
-
-/* Idle state */
-#idle-area{padding:24px;text-align:center;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:24px}
-#idle-area .idle-household{font-size:36px;color:#fff}
-#idle-area .idle-protocol{font-size:18px;color:#8B949E;margin-top:4px}
-#idle-area .idle-triage{font-size:18px;color:#00E5FF;margin-top:8px;font-style:italic}
-#idle-area .idle-carry{font-size:18px;color:#8B949E;margin-top:8px}
-#idle-area .idle-controls{font-size:18px;color:#8B949E;margin-top:8px}
-
-/* Resume indicator (Property 2) */
-#resume-indicator{font-size:18px;color:#00E5FF;margin-top:12px;opacity:0.8}
-
-/* Voice picker */
-#voice-picker{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:16px;padding:6px 12px;border:1px solid #8B949E;background:#000;color:#8B949E;cursor:pointer;min-width:200px;max-width:100%}
-#voice-picker:focus{border-color:#00d4ff;outline:none}
-#voice-picker option{background:#000;color:#fff}
-#voice-label{font-size:16px;color:#8B949E;margin-top:8px}
-
-/* Audio indicator */
-#audio-indicator{display:none;align-items:center;justify-content:center;gap:4px;position:absolute;bottom:200px;left:50%;transform:translateX(-50%);z-index:10;height:24px}
-#audio-indicator.active{display:flex}
-#audio-indicator .bar{width:4px;height:12px;background:#00E5FF;border-radius:2px;animation:audio-pulse 0.6s ease-in-out infinite}
-#audio-indicator .bar:nth-child(2){animation-delay:0.1s}
-#audio-indicator .bar:nth-child(3){animation-delay:0.2s}
-#audio-indicator .bar:nth-child(4){animation-delay:0.3s}
-#audio-indicator .bar:nth-child(5){animation-delay:0.4s}
-@keyframes audio-pulse{0%,100%{height:4px;opacity:0.4}50%{height:20px;opacity:1}}
-
-/* Visually hidden */
+#launch-area{padding:24px;text-align:center;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:24px}
+#launch-area .launch-title{font-size:24px;color:#8B949E;letter-spacing:1px;text-transform:uppercase}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
 </style>
 </head>
 <body>
-<div id="app" role="main" aria-label="Dastak health visit application">
-
+<div id="app" role="main" aria-label="Dastak multi-protocol health visit application">
   <div id="context" role="banner">
     <div class="header-row">
-      <span id="protocol-label" class="label">HBNC · DAY 7</span>
+      <span id="protocol-label" class="label">DASTAK</span>
       <span id="step-info" class="step-info"></span>
     </div>
     <div id="progress-track"><div id="progress-fill"></div></div>
   </div>
-
   <div id="question-area">
-    <div id="idle-area">
-      <div id="idle-household" class="idle-household"></div>
-      <div id="idle-protocol" class="idle-protocol"></div>
-      <div id="idle-triage" class="idle-triage"></div>
-      <div id="idle-carry" class="idle-carry"></div>
-      <!-- FIX 1: .focusable class per MCP docs -->
-      <button id="idle-start" class="focusable" role="button" aria-label="Begin visit">⟩ ENTER to begin</button>
-      <button id="idle-test-audio" class="focusable" role="button" aria-label="Test audio" style="font-size:18px;min-height:48px;padding:8px 16px">⟩ Test audio</button>
-      <div id="voice-label">Voice:</div>
-      <select id="voice-picker" aria-label="Select voice"></select>
-      <div id="idle-controls" class="idle-controls">→ different household</div>
+    <div id="launch-area">
+      <div class="launch-title">What is this visit?</div>
+      <div id="launch-options" style="width:100%"></div>
     </div>
-
     <div id="prompt-text" role="heading" aria-level="2" style="display:none"></div>
-
     <div id="carry-forward" style="display:none"></div>
-
     <div id="options" style="display:none"></div>
-
     <div id="count-display" style="display:none"></div>
     <div id="count-unit" style="display:none"></div>
-
-    <div id="resume-indicator" style="display:none"></div>
-
     <div id="complete-area" style="display:none">
       <div class="done-label">COMPLETE</div>
       <div class="done-text">Visit recorded.</div>
@@ -163,10 +70,12 @@ html,body{width:600px;height:600px;overflow:hidden;background:#000;color:#fff;fo
       <div id="done-sync" class="done-sync"></div>
     </div>
   </div>
-
   <div id="controls">
-    <div id="controls-idle" class="control-row">
-      <span><span class="key">ENTER</span> <span class="action">begin visit</span></span>
+    <div id="controls-launch" class="control-row">
+      <span><span class="key">← →</span> <span class="action">choose protocol</span></span>
+    </div>
+    <div class="enter-row" id="enter-row-launch">
+      <span><span class="key">ENTER</span> <span class="action">begin</span></span>
     </div>
     <div id="controls-step" class="control-row" style="display:none">
       <span><span class="key">← →</span> <span class="action">choose</span></span>
@@ -182,56 +91,118 @@ html,body{width:600px;height:600px;overflow:hidden;background:#000;color:#fff;fo
       <span><span class="key">ENTER</span> <span class="action">confirm</span></span>
     </div>
     <div id="controls-info" class="control-row" style="display:none">
-      <span><span class="key">ENTER</span> <span class="action">continue the visit</span></span>
+      <span><span class="key">ENTER</span> <span class="action">continue</span></span>
     </div>
     <div id="controls-danger" class="control-row" style="display:none">
-      <span><span class="key">ENTER</span> <span class="action">continue the visit</span></span>
+      <span><span class="key">ENTER</span> <span class="action">continue</span></span>
     </div>
     <div id="controls-complete" class="control-row" style="display:none">
-      <span><span class="key">↑ back</span> <span class="action">to previous step</span></span>
+      <span><span class="key">ENTER</span> <span class="action">back to launcher</span></span>
     </div>
   </div>
-
-  <div id="audio-indicator"><span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span></div>
-
+  <div id="audio-indicator" style="display:none;align-items:center;justify-content:center;gap:4px;position:absolute;bottom:200px;left:50%;transform:translateX(-50%);z-index:10;height:24px"><span class="bar" style="width:4px;height:12px;background:#00E5FF;border-radius:2px"></span><span class="bar" style="width:4px;height:12px;background:#00E5FF;border-radius:2px"></span><span class="bar" style="width:4px;height:12px;background:#00E5FF;border-radius:2px"></span><span class="bar" style="width:4px;height:12px;background:#00E5FF;border-radius:2px"></span><span class="bar" style="width:4px;height:12px;background:#00E5FF;border-radius:2px"></span></div>
   <div id="offline-marker">saved locally</div>
-
 </div>
-
 <script>
 // ============================================================
-// DASTAK — glasses.html
-// NO fetch. NO XMLHttpRequest post-startup. NO navigator.sendBeacon.
-// This file is verified by grep at demo time.
-//
-// FIX 1: Focus management per MCP docs — .focusable class pattern.
-// Neural Band pinch dispatches Enter to document.activeElement.
-// Arrow keys call .focus() on real elements via moveFocus().
+// DASTAK — Multi-Protocol Engine
+// NO fetch. NO XMLHttpRequest. NO navigator.sendBeacon.
+// All protocols loaded from embedded registry. Zero network calls.
 // ============================================================
 
-// --- Input constants per MCP docs ---
 var DPAD = {
   UP: 'ArrowUp', DOWN: 'ArrowDown',
   LEFT: 'ArrowLeft', RIGHT: 'ArrowRight',
   SELECT: 'Enter', BACK: 'Escape'
 };
 
-// --- Embedded roster (Property 1: zero-query launch) ---
-var ROSTER = [
-  {"id":"H-104","area":"Sector 3","protocol":"HBNC Day 7","protocolId":"hbnc_day7","dueIn":0,"lastFlag":"low temp","steps":["weight","feeding","flag_feeding","temp","flag_temp","cord","flag_cord","activity","flag_activity","counselling"]},
-  {"id":"H-112","area":"Sector 3","protocol":"HBNC Day 21","protocolId":"hbnc_day21","dueIn":1,"lastFlag":null,"steps":["weight","feeding","temp","cord","activity","counselling"]},
-  {"id":"H-087","area":"Sector 7","protocol":"ANC month 6","protocolId":"anc_month6","dueIn":-2,"lastFlag":null,"steps":["weight","haemoglobin","blood_pressure","counselling"]},
-  {"id":"H-201","area":"Sector 5","protocol":"HBNC Day 14","protocolId":"hbnc_day14","dueIn":0,"lastFlag":null,"steps":["weight","feeding","temp","cord","activity","counselling"]},
-  {"id":"H-098","area":"Sector 3","protocol":"HBNC Day 7","protocolId":"hbnc_day7","dueIn":-1,"lastFlag":"feeding difficulty","steps":["weight","feeding","flag_feeding","temp","flag_temp","cord","flag_cord","activity","flag_activity","counselling"]},
-  {"id":"H-155","area":"Sector 7","protocol":"HBNC Day 21","protocolId":"hbnc_day21","dueIn":0,"lastFlag":null,"steps":["weight","feeding","temp","cord","activity","counselling"]}
+// ============================================================
+// PROTOCOL REGISTRY — all protocols embedded for offline-first
+// Canonical source: protocols/*.json (see verify.js)
+// ============================================================
+var PROTOCOLS = [
+  {
+    "id": "home_visit",
+    "label": "Routine Home Visit",
+    "start": "weight",
+    "status": "demo-ready",
+    "version": "1.0.0",
+    "steps": [
+      {"id":"weight","prompt":"Record the baby's weight","type":"count","unit":"kg","min":1.0,"max":6.0,"step":0.1,"default":2.8,"next":"feeding","content_source":"UNSOURCED"},
+      {"id":"feeding","prompt":"Is the baby breastfeeding well?","type":"yesno","onYes":"temp","onNo":"flag_feeding","content_source":"UNSOURCED"},
+      {"id":"flag_feeding","prompt":"Feeding difficulty recorded","type":"info","danger":true,"referral":"Refer to the health facility.","next":"temp","content_source":"UNSOURCED"},
+      {"id":"temp","prompt":"Does the baby feel cold to touch?","type":"yesno","onYes":"flag_temp","onNo":"cord","content_source":"UNSOURCED"},
+      {"id":"flag_temp","prompt":"Low temperature recorded","type":"info","danger":true,"referral":"Refer to the health facility.","next":"cord","content_source":"UNSOURCED"},
+      {"id":"cord","prompt":"Is the cord stump clean and dry?","type":"yesno","onYes":"activity","onNo":"flag_cord","content_source":"UNSOURCED"},
+      {"id":"flag_cord","prompt":"Cord problem recorded","type":"info","danger":true,"referral":"Refer to the health facility.","next":"activity","content_source":"UNSOURCED"},
+      {"id":"activity","prompt":"Is the baby active when awake?","type":"yesno","onYes":"counselling","onNo":"flag_activity","content_source":"UNSOURCED"},
+      {"id":"flag_activity","prompt":"Reduced activity recorded","type":"info","danger":true,"referral":"Refer to the health facility.","next":"counselling","content_source":"UNSOURCED"},
+      {"id":"counselling","prompt":"Topics covered with the mother","type":"choice","options":["Feeding","Warmth","Hygiene","All three"],"next":null,"content_source":"UNSOURCED"}
+    ]
+  },
+  {
+    "id": "danger_signs",
+    "label": "Danger Signs",
+    "start": "fever",
+    "status": "demo-ready",
+    "version": "1.0.0",
+    "steps": [
+      {"id":"fever","prompt":"Does the beneficiary report fever?","type":"yesno","onYes":"temp","onNo":"headache","content_source":"UNSOURCED"},
+      {"id":"temp","prompt":"Record the beneficiary's temperature","type":"range","min":35.0,"max":42.0,"step":0.5,"unit":"°C","default":36.5,"next":"headache","rule":{"condition":{"op":"gt","value":38.5},"target":"referral"},"content_source":"UNSOURCED"},
+      {"id":"headache","prompt":"Does the beneficiary report severe headache?","type":"yesno","onYes":"stiff_neck","onNo":"rash","content_source":"UNSOURCED"},
+      {"id":"stiff_neck","prompt":"Does the beneficiary report stiff neck?","type":"yesno","onYes":"referral","onNo":"rash","content_source":"UNSOURCED"},
+      {"id":"rash","prompt":"Does the beneficiary report rash?","type":"yesno","onYes":"referral","onNo":"breathing","content_source":"UNSOURCED"},
+      {"id":"breathing","prompt":"Is the beneficiary breathing with difficulty?","type":"yesno","onYes":"referral","onNo":"complete","content_source":"UNSOURCED"},
+      {"id":"complete","prompt":"Danger signs assessed. No immediate referral needed.","type":"info","next":null,"content_source":"UNSOURCED"},
+      {"id":"referral","prompt":"Refer to the health facility.","type":"info","danger":true,"referral":"This check-in does not replace clinical judgement.","next":null,"content_source":"UNSOURCED"}
+    ]
+  },
+  {
+    "id": "adherence",
+    "label": "Treatment Follow-Up",
+    "start": "doses",
+    "status": "demo-ready",
+    "version": "1.0.0",
+    "steps": [
+      {"id":"doses","prompt":"Doses taken since last visit?","type":"choice","options":[{"label":"All doses taken","value":"all","next":"regimen"},{"label":"Missed 1–2 doses","value":"missed_few","next":"flag_adherence"},{"label":"Missed 3+ doses","value":"missed_many","next":"flag_adherence"}],"content_source":"UNSOURCED"},
+      {"id":"flag_adherence","prompt":"Dose-miss pattern recorded","type":"info","danger":true,"referral":"Review adherence barriers with the beneficiary.","next":"regimen","content_source":"UNSOURCED"},
+      {"id":"regimen","prompt":"Current medication phase?","type":"choice","options":["Intensive phase","Continuation phase","Not sure"],"next":"side_effects","content_source":"UNSOURCED"},
+      {"id":"side_effects","prompt":"Any reported side effects?","type":"yesno","onYes":"side_effect_detail","onNo":"weight","content_source":"UNSOURCED"},
+      {"id":"side_effect_detail","prompt":"Which side effects reported?","type":"choice","options":["Nausea or vomiting","Joint pain","Vision changes","Skin rash"],"next":"flag_side_effects","content_source":"UNSOURCED"},
+      {"id":"flag_side_effects","prompt":"Side effects recorded","type":"info","danger":true,"referral":"Report side effects to the supervisor.","next":"weight","content_source":"UNSOURCED"},
+      {"id":"weight","prompt":"Record the beneficiary's weight","type":"count","unit":"kg","min":30.0,"max":120.0,"step":0.5,"default":55.0,"next":"counselling","content_source":"UNSOURCED"},
+      {"id":"counselling","prompt":"Counselling topics covered","type":"choice","options":["Completion importance","Side effects awareness","Nutrition support","All three"],"next":null,"content_source":"UNSOURCED"}
+    ]
+  },
+  {
+    "id": "post_discharge",
+    "label": "Post-Discharge",
+    "start": "overall",
+    "status": "demo-ready",
+    "version": "1.0.0",
+    "steps": [
+      {"id":"overall","prompt":"How is the beneficiary feeling since discharge?","type":"choice","options":[{"label":"Well","value":"well","next":"temp"},{"label":"Some complaints","value":"complaints","next":"symptom_category"},{"label":"Concerns","value":"concerns","next":"referral"}],"content_source":"UNSOURCED"},
+      {"id":"symptom_category","prompt":"Primary concern?","type":"choice","options":[{"label":"Pain","value":"pain","next":"pain_detail"},{"label":"Bleeding","value":"bleeding","next":"bleeding_detail"},{"label":"Fever","value":"fever","next":"fever_temp"},{"label":"Wound problem","value":"wound","next":"wound_detail"}],"content_source":"UNSOURCED"},
+      {"id":"pain_detail","prompt":"Where is the pain?","type":"choice","options":["Abdominal","Head","Chest","Back"],"next":"temp","content_source":"UNSOURCED"},
+      {"id":"bleeding_detail","prompt":"Severity of bleeding?","type":"choice","options":[{"label":"Light spotting","value":"light","next":"temp"},{"label":"Moderate","value":"moderate","next":"temp"},{"label":"Heavy","value":"heavy","next":"referral"}],"content_source":"UNSOURCED"},
+      {"id":"fever_temp","prompt":"Record the beneficiary's temperature","type":"range","min":35.0,"max":42.0,"step":0.5,"unit":"°C","default":36.5,"next":"temp","rule":{"condition":{"op":"gt","value":38.5},"target":"referral"},"content_source":"UNSOURCED"},
+      {"id":"wound_detail","prompt":"Wound condition?","type":"choice","options":[{"label":"Clean and dry","value":"clean","next":"temp"},{"label":"Redness","value":"redness","next":"referral"},{"label":"Discharge","value":"discharge","next":"referral"},{"label":"Opening","value":"opening","next":"referral"}],"content_source":"UNSOURCED"},
+      {"id":"temp","prompt":"Record the beneficiary's temperature","type":"range","min":35.0,"max":42.0,"step":0.5,"unit":"°C","default":36.5,"next":"bp","rule":{"condition":{"op":"gt","value":38.5},"target":"referral"},"content_source":"UNSOURCED"},
+      {"id":"bp","prompt":"Record systolic blood pressure","type":"range","min":80,"max":200,"step":5,"unit":"mmHg","default":120,"next":"plan","rule":{"condition":{"op":"gt","value":140},"target":"flag_bp"},"content_source":"UNSOURCED"},
+      {"id":"flag_bp","prompt":"Elevated blood pressure recorded","type":"info","danger":true,"referral":"Monitor blood pressure closely.","next":"plan","content_source":"UNSOURCED"},
+      {"id":"plan","prompt":"Follow-up plan discussed","type":"choice","options":["Return in 1 week","Return in 2 weeks","Next scheduled visit"],"next":null,"content_source":"UNSOURCED"},
+      {"id":"referral","prompt":"Refer to the health facility.","type":"info","danger":true,"referral":"This check-in does not replace clinical judgement.","next":null,"content_source":"UNSOURCED"}
+    ]
+  }
 ];
 
-var PROTOCOL = {"id":"hbnc_day7","label":"HBNC \u00b7 Day 7","start":"weight","steps":[{"id":"weight","prompt":"Record the baby\u2019s weight","type":"count","unit":"kg","min":1.0,"max":6.0,"step":0.1,"default":2.8,"next":"feeding"},{"id":"feeding","prompt":"Is the baby breastfeeding well?","type":"yesno","onYes":"temp","onNo":"flag_feeding"},{"id":"flag_feeding","prompt":"Feeding difficulty recorded","type":"info","danger":true,"referral":"Refer to the health facility.","next":"temp"},{"id":"temp","prompt":"Does the baby feel cold to touch?","type":"yesno","onYes":"flag_temp","onNo":"cord"},{"id":"flag_temp","prompt":"Low temperature recorded","type":"info","danger":true,"referral":"Refer to the health facility.","next":"cord"},{"id":"cord","prompt":"Is the cord stump clean and dry?","type":"yesno","onYes":"activity","onNo":"flag_cord"},{"id":"flag_cord","prompt":"Cord problem recorded","type":"info","danger":true,"referral":"Refer to the health facility.","next":"activity"},{"id":"activity","prompt":"Is the baby active when awake?","type":"yesno","onYes":"counselling","onNo":"flag_activity"},{"id":"flag_activity","prompt":"Reduced activity recorded","type":"info","danger":true,"referral":"Refer to the health facility.","next":"counselling"},{"id":"counselling","prompt":"Topics covered with the mother","type":"choice","options":["Feeding","Warmth","Hygiene","All three"],"next":null}]};
 var STORAGE_KEY = 'dastak_visit';
 var CARRY_KEY = 'dastak_carry';
 
-// --- State ---
-var protocol = null;
+// ============================================================
+// ENGINE STATE
+// ============================================================
+var activeProtocol = null;
 var steps = {};
 var currentStepId = null;
 var stepHistory = [];
@@ -239,177 +210,267 @@ var answers = {};
 var startedAt = null;
 var completedAt = null;
 var flags = [];
-var state = 'idle';
+var state = 'launch'; // launch | step | count | info | danger | complete
 var countValue = 0;
-var householdIndex = 0;
 var resumeStep = null;
 var resumeTime = null;
 var carryFlags = {};
 var navigatingViaPopstate = false;
+var launchIndex = 0;
 
 // ============================================================
-// FIX 1 per MCP docs: Focus management
-// moveFocus() queries .focusable:not([disabled]):not(.hidden)
-// and calls .focus() on the next/prev element.
+// FOCUS MANAGEMENT
 // ============================================================
 function getFocusables() {
   return Array.from(
     document.querySelectorAll('.focusable:not([disabled]):not(.hidden)')
   ).filter(function(el) {
-    // Only include focusable elements that are currently visible
-    return el.offsetParent !== null || el.id === 'idle-start';
+    return el.offsetParent !== null;
   });
 }
 
 function moveFocus(direction) {
   var focusables = getFocusables();
   if (!focusables.length) return;
-
   var idx = focusables.indexOf(document.activeElement);
   if (idx === -1) { focusables[0].focus(); return; }
-
   var next;
   if (direction === 'up' || direction === 'left') {
     next = idx > 0 ? idx - 1 : focusables.length - 1;
   } else {
     next = idx < focusables.length - 1 ? idx + 1 : 0;
   }
-
   focusables[next].focus();
   focusables[next].scrollIntoView({ block: 'nearest', behavior: 'instant' });
 }
 
-// --- Load protocol (single XHR at startup only) ---
-function loadProtocol() {
-  protocol = PROTOCOL;
-  buildStepMap();
-  loadCarryData();
-  checkResume();
-  computeIdle();
+// ============================================================
+// PROTOCOL ENGINE — pure interpreter, no clinical logic
+// ============================================================
+function loadProtocolById(id) {
+  for (var i = 0; i < PROTOCOLS.length; i++) {
+    if (PROTOCOLS[i].id === id) return PROTOCOLS[i];
+  }
+  return null;
 }
 
 function buildStepMap() {
   steps = {};
-  if (!protocol || !protocol.steps) return;
-  for (var i = 0; i < protocol.steps.length; i++) {
-    steps[protocol.steps[i].id] = protocol.steps[i];
+  if (!activeProtocol || !activeProtocol.steps) return;
+  for (var i = 0; i < activeProtocol.steps.length; i++) {
+    steps[activeProtocol.steps[i].id] = activeProtocol.steps[i];
   }
 }
 
-// ============================================================
-// PROPERTY 1 — Anticipation: zero-query launch
-// ============================================================
-function computeIdle() {
-  var household = ROSTER[householdIndex];
-  document.getElementById('idle-household').textContent = household.id + ' · ' + household.area;
-  document.getElementById('idle-protocol').textContent = household.protocol;
-
-  var carryEl = document.getElementById('idle-carry');
-  var prevFlags = getCarryFlags(household.id);
-  if (prevFlags) {
-    carryEl.textContent = '⟩ flagged last visit: ' + prevFlags;
-    carryEl.style.color = '#00E5FF';
-    carryEl.style.opacity = '0.7';
-  } else {
-    carryEl.textContent = '';
+function generateRangeChoices(step) {
+  var choices = [];
+  var v = step.min;
+  while (v <= step.max + 0.0001) {
+    var label = v % 1 === 0 ? String(v) : v.toFixed(1);
+    if (step.unit) label += ' ' + step.unit;
+    choices.push({ label: label, value: Math.round(v * 100) / 100 });
+    v = Math.round((v + step.step) * 100) / 100;
   }
-
-  var triageEl = document.getElementById('idle-triage');
-  triageEl.textContent = computeTriageNote();
-
-  var resumeEl = document.getElementById('resume-indicator');
-  if (resumeStep) {
-    var elapsed = Date.now() - resumeTime;
-    var mins = Math.floor(elapsed / 60000);
-    resumeEl.textContent = 'Resuming ' + household.id + ', step ' + getStepIndex(resumeStep) + '. Interrupted ' + mins + 'm ago.';
-    resumeEl.style.display = '';
-  } else {
-    resumeEl.style.display = 'none';
-  }
-
-  // FIX 1: Focus the begin button so Neural Band pinch works
-  document.getElementById('idle-start').focus();
+  return choices;
 }
 
-function getStepIndex(stepId) {
-  if (!protocol || !protocol.steps) return '?';
-  for (var i = 0; i < protocol.steps.length; i++) {
-    if (protocol.steps[i].id === stepId) return (i + 1) + ' of ' + protocol.steps.length;
+function evaluateRule(step, answer) {
+  if (!step.rule) return false;
+  var cond = step.rule.condition;
+  var val = answer;
+  // For range, answer is numeric
+  if (typeof val === 'string' && !isNaN(Number(val))) val = Number(val);
+  switch (cond.op) {
+    case 'eq': return val === cond.value;
+    case 'neq': return val !== cond.value;
+    case 'gt': return val > cond.value;
+    case 'gte': return val >= cond.value;
+    case 'lt': return val < cond.value;
+    case 'lte': return val <= cond.value;
+    case 'in': return Array.isArray(cond.value) && cond.value.indexOf(val) !== -1;
+    default: return false;
+  }
+}
+
+function getActiveAnswer() {
+  var step = steps[currentStepId];
+  if (!step) return null;
+  if (step.type === 'yesno') {
+    var active = document.querySelector('#options .focusable.selected');
+    return active ? active.getAttribute('data-val') : 'yes';
+  } else if (step.type === 'count') {
+    return countValue;
+  } else if (step.type === 'choice') {
+    var active = document.querySelector('#options .focusable.selected');
+    if (!active) return null;
+    var idx = parseInt(active.getAttribute('data-idx'), 10);
+    if (step.options && typeof step.options[0] === 'object') {
+      return step.options[idx] ? step.options[idx].value : null;
+    }
+    return active.getAttribute('data-val');
+  } else if (step.type === 'range') {
+    var active = document.querySelector('#options .focusable.selected');
+    if (!active) return null;
+    var val = active.getAttribute('data-val');
+    return isNaN(Number(val)) ? val : Number(val);
+  } else if (step.type === 'info') {
+    return step.danger ? 'flagged' : 'noted';
+  }
+  return null;
+}
+
+function getNextStep(step, answer) {
+  // Check escalation rule first
+  if (step.rule && evaluateRule(step, answer)) {
+    return step.rule.target;
+  }
+  if (step.type === 'yesno') {
+    return answer === 'yes' ? step.onYes : step.onNo;
+  } else if (step.type === 'choice') {
+    // Check per-option branching
+    if (step.options && typeof step.options[0] === 'object') {
+      for (var i = 0; i < step.options.length; i++) {
+        if (step.options[i].value === answer || step.options[i].label === answer) {
+          if (step.options[i].next !== undefined) return step.options[i].next;
+        }
+      }
+    }
+    return step.next;
+  } else if (step.type === 'range' || step.type === 'count') {
+    return step.next;
+  } else if (step.type === 'info') {
+    return step.next;
+  }
+  return null;
+}
+
+function getEffectiveTotalSteps() {
+  if (!activeProtocol || !activeProtocol.steps) return 1;
+  return activeProtocol.steps.length;
+}
+
+function getStepDisplayIndex(stepId) {
+  if (!activeProtocol || !activeProtocol.steps) return '?';
+  for (var i = 0; i < activeProtocol.steps.length; i++) {
+    if (activeProtocol.steps[i].id === stepId) return (i + 1) + ' of ' + activeProtocol.steps.length;
   }
   return '?';
 }
 
 // ============================================================
-// PROPERTY 3 — Triage: the planner speaks once
+// LAUNCHER — one-decision-per-frame protocol selection
 // ============================================================
-function computeTriageNote() {
-  var overdue = 0;
-  var flagged = 0;
-  for (var i = 0; i < ROSTER.length; i++) {
-    if (ROSTER[i].dueIn < 0) overdue++;
-    if (ROSTER[i].lastFlag) flagged++;
+function renderLauncher() {
+  state = 'launch';
+  activeProtocol = null;
+  steps = {};
+  currentStepId = null;
+
+  document.getElementById('protocol-label').textContent = 'DASTAK';
+  document.getElementById('step-info').textContent = '';
+  updateProgress(0, 1);
+
+  show('launch-area');
+  var container = document.getElementById('launch-options');
+  container.innerHTML = '';
+
+  for (var i = 0; i < PROTOCOLS.length; i++) {
+    var btn = document.createElement('button');
+    btn.className = 'focusable' + (i === launchIndex ? ' selected' : '');
+    btn.setAttribute('data-idx', String(i));
+    btn.setAttribute('role', 'radio');
+    btn.setAttribute('aria-checked', i === launchIndex ? 'true' : 'false');
+    btn.setAttribute('aria-label', PROTOCOLS[i].label);
+    btn.textContent = PROTOCOLS[i].label.toUpperCase();
+    btn.addEventListener('click', (function(idx) {
+      return function(e) {
+        e.preventDefault();
+        launchIndex = idx;
+        selectLaunchOption(idx);
+        startProtocol();
+      };
+    })(i));
+    container.appendChild(btn);
   }
-  if (overdue > 0) return 'Three overdue in Sector 3. Start there.';
-  if (flagged > 0) return 'One flagged visit today. Start there.';
-  return 'All visits on schedule.';
+  container.style.display = '';
+
+  showControls('launch');
+  var btns = container.querySelectorAll('.focusable');
+  if (btns[launchIndex]) btns[launchIndex].focus();
+}
+
+function selectLaunchOption(idx) {
+  var opts = document.querySelectorAll('#launch-options .focusable');
+  for (var i = 0; i < opts.length; i++) {
+    var isSelected = i === idx;
+    opts[i].classList.toggle('selected', isSelected);
+    opts[i].setAttribute('aria-checked', isSelected ? 'true' : 'false');
+  }
+}
+
+function startProtocol() {
+  var proto = PROTOCOLS[launchIndex];
+  if (!proto) return;
+  activeProtocol = proto;
+  buildStepMap();
+  loadCarryData();
+  checkResume();
+  startedAt = Date.now();
+  stepHistory = [];
+  answers = {};
+  flags = [];
+  ensureAudio();
+  if (resumeStep) {
+    renderStep(resumeStep);
+  } else if (activeProtocol.start) {
+    renderStep(activeProtocol.start);
+  } else if (activeProtocol.steps && activeProtocol.steps.length > 0) {
+    renderStep(activeProtocol.steps[0].id);
+  }
 }
 
 // ============================================================
-// PROPERTY 4 — Carry-forward: verbatim recall
+// CARRY-FORWARD
 // ============================================================
 function loadCarryData() {
   try {
     var raw = localStorage.getItem(CARRY_KEY);
     if (raw) carryFlags = JSON.parse(raw);
-  } catch(e) {
-    carryFlags = {};
+  } catch(e) { carryFlags = {}; }
+}
+
+function getCarryStepNote(stepId) {
+  // Use a generic key based on protocol id + step id
+  if (!activeProtocol) return null;
+  var key = activeProtocol.id + ':' + stepId;
+  var record = carryFlags[key];
+  if (!record) return null;
+  return '⟩ flagged at the ' + record.visitLabel + ' visit';
+}
+
+function saveCarryData(visitFlags, visitLabel) {
+  if (visitFlags.length === 0 || !activeProtocol) return;
+  for (var i = 0; i < visitFlags.length; i++) {
+    var key = activeProtocol.id + ':' + visitFlags[i].stepId;
+    carryFlags[key] = {
+      stepId: visitFlags[i].stepId,
+      type: visitFlags[i].type,
+      description: visitFlags[i].description,
+      visitLabel: visitLabel
+    };
   }
-}
-
-function getCarryFlags(householdId) {
-  var record = carryFlags[householdId];
-  if (!record || !record.flags || record.flags.length === 0) return null;
-  var f = record.flags[0];
-  return f.description || f.type;
-}
-
-function getCarryStepNote(householdId, stepId) {
-  var record = carryFlags[householdId];
-  if (!record || !record.flags) return null;
-  for (var i = 0; i < record.flags.length; i++) {
-    if (record.flags[i].stepId === stepId) {
-      return 'flagged at the ' + record.flags[i].visitLabel + ' visit';
-    }
-  }
-  return null;
-}
-
-function saveCarryData(householdId, visitFlags, visitLabel) {
-  if (visitFlags.length === 0) return;
-  carryFlags[householdId] = {
-    flags: visitFlags.map(function(f) {
-      return {
-        stepId: f.stepId,
-        type: f.type,
-        description: f.description,
-        visitLabel: visitLabel
-      };
-    })
-  };
-  try {
-    localStorage.setItem(CARRY_KEY, JSON.stringify(carryFlags));
-  } catch(e) {}
+  try { localStorage.setItem(CARRY_KEY, JSON.stringify(carryFlags)); } catch(e) {}
 }
 
 // ============================================================
-// PROPERTY 2 — Continuity: resume mid-thought
+// RESUME
 // ============================================================
 function checkResume() {
   try {
     var raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return;
     var saved = JSON.parse(raw);
-    if (saved && saved.stepId && saved.householdId === ROSTER[householdIndex].id) {
+    if (saved && saved.stepId && saved.protocolId === (activeProtocol && activeProtocol.id)) {
       resumeStep = saved.stepId;
       resumeTime = saved.savedAt;
       answers = saved.answers || {};
@@ -422,7 +483,7 @@ function checkResume() {
 function saveProgress() {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
-      householdId: ROSTER[householdIndex].id,
+      protocolId: activeProtocol ? activeProtocol.id : null,
       stepId: currentStepId,
       answers: answers,
       flags: flags,
@@ -437,11 +498,10 @@ function clearResume() {
 }
 
 // ============================================================
-// UI helpers
+// UI HELPERS
 // ============================================================
 function show(id) {
-  var els = ['idle-area','prompt-text','options','count-display','count-unit',
-             'complete-area','carry-forward','resume-indicator'];
+  var els = ['launch-area','prompt-text','options','count-display','count-unit','complete-area','carry-forward'];
   for (var i = 0; i < els.length; i++) {
     var el = document.getElementById(els[i]);
     if (el) el.style.display = 'none';
@@ -451,13 +511,15 @@ function show(id) {
 }
 
 function showControls(type) {
-  var ids = ['controls-idle','controls-step','enter-row-step',
-             'controls-count','enter-row-count','controls-info',
-             'controls-danger','controls-complete'];
+  var ids = ['controls-launch','enter-row-launch','controls-step','enter-row-step',
+             'controls-count','enter-row-count','controls-info','controls-danger','controls-complete'];
   for (var i = 0; i < ids.length; i++) {
     document.getElementById(ids[i]).style.display = 'none';
   }
-  if (type === 'idle') document.getElementById('controls-idle').style.display = '';
+  if (type === 'launch') {
+    document.getElementById('controls-launch').style.display = '';
+    document.getElementById('enter-row-launch').style.display = '';
+  }
   if (type === 'step') {
     document.getElementById('controls-step').style.display = '';
     document.getElementById('enter-row-step').style.display = '';
@@ -480,15 +542,8 @@ function updateStepInfo(current, total) {
   document.getElementById('step-info').textContent = 'step ' + current + ' of ' + total;
 }
 
-function showError(msg) {
-  show('prompt-text');
-  document.getElementById('prompt-text').textContent = msg;
-  document.getElementById('prompt-text').style.color = '#E5484D';
-  showControls('idle');
-}
-
 // ============================================================
-// Render a step
+// RENDER A STEP — one frame per step, always
 // ============================================================
 function renderStep(stepId) {
   var step = steps[stepId];
@@ -497,24 +552,21 @@ function renderStep(stepId) {
   currentStepId = stepId;
   state = 'step';
 
-  var household = ROSTER[householdIndex];
-  document.getElementById('protocol-label').textContent = household.protocol.toUpperCase();
-
-  var stepIdx = getStepIndex(stepId);
+  document.getElementById('protocol-label').textContent = activeProtocol.label.toUpperCase();
+  var stepIdx = getStepDisplayIndex(stepId);
   updateStepInfo(stepIdx.split(' of ')[0], stepIdx.split(' of ')[1]);
-  updateProgress(stepHistory.length, protocol.steps.length);
-
+  updateProgress(stepHistory.length, getEffectiveTotalSteps());
   saveProgress();
 
   show('prompt-text');
   document.getElementById('prompt-text').style.color = '#fff';
   document.getElementById('prompt-text').textContent = step.prompt;
 
-  // PROPERTY 4: carry-forward
+  // Carry-forward
   var cfEl = document.getElementById('carry-forward');
-  var cfNote = getCarryStepNote(household.id, stepId);
+  var cfNote = getCarryStepNote(stepId);
   if (cfNote) {
-    cfEl.textContent = '⟩ ' + cfNote;
+    cfEl.textContent = cfNote;
     cfEl.style.display = '';
     playCarryTone();
   } else {
@@ -531,6 +583,9 @@ function renderStep(stepId) {
   } else if (step.type === 'choice') {
     renderChoice(step);
     showControls('step');
+  } else if (step.type === 'range') {
+    renderRange(step);
+    showControls('step');
   } else if (step.type === 'info') {
     if (step.danger) {
       state = 'danger';
@@ -543,19 +598,14 @@ function renderStep(stepId) {
     }
   }
 
-  // Push browser history entry for this screen
   if (!navigatingViaPopstate) {
     window.history.pushState({screen:'step', stepId: stepId}, '', '#step/' + stepId);
   }
 }
 
-// ============================================================
-// FIX 1 per MCP docs: Render functions create .focusable elements
-// ============================================================
 function renderYesNo(step) {
   var container = document.getElementById('options');
   container.innerHTML = '';
-
   var noBtn = document.createElement('button');
   noBtn.className = 'focusable';
   noBtn.setAttribute('data-val', 'no');
@@ -563,11 +613,7 @@ function renderYesNo(step) {
   noBtn.setAttribute('aria-checked', 'false');
   noBtn.setAttribute('aria-label', 'No');
   noBtn.textContent = 'NO';
-  noBtn.addEventListener('click', function(e) {
-    e.preventDefault();
-    selectOption(this, 'no');
-    advance();
-  });
+  noBtn.addEventListener('click', function(e) { e.preventDefault(); selectOption(this, 'no'); advance(); });
 
   var yesBtn = document.createElement('button');
   yesBtn.className = 'focusable selected';
@@ -576,16 +622,11 @@ function renderYesNo(step) {
   yesBtn.setAttribute('aria-checked', 'true');
   yesBtn.setAttribute('aria-label', 'Yes');
   yesBtn.textContent = 'YES';
-  yesBtn.addEventListener('click', function(e) {
-    e.preventDefault();
-    selectOption(this, 'yes');
-    advance();
-  });
+  yesBtn.addEventListener('click', function(e) { e.preventDefault(); selectOption(this, 'yes'); advance(); });
 
   container.appendChild(noBtn);
   container.appendChild(yesBtn);
   container.style.display = '';
-
   yesBtn.focus();
 }
 
@@ -604,48 +645,40 @@ function renderCount(step) {
   decBtn.className = 'focusable';
   decBtn.setAttribute('aria-label', 'Decrease value');
   decBtn.textContent = '−';
-  decBtn.addEventListener('click', function(e) {
-    e.preventDefault();
-    adjustCount(-1);
-  });
+  decBtn.addEventListener('click', function(e) { e.preventDefault(); adjustCount(-1); });
 
   var incBtn = document.createElement('button');
   incBtn.className = 'focusable';
   incBtn.setAttribute('aria-label', 'Increase value');
   incBtn.textContent = '+';
-  incBtn.addEventListener('click', function(e) {
-    e.preventDefault();
-    adjustCount(1);
-  });
+  incBtn.addEventListener('click', function(e) { e.preventDefault(); adjustCount(1); });
 
   var confirmBtn = document.createElement('button');
   confirmBtn.className = 'focusable';
   confirmBtn.setAttribute('aria-label', 'Confirm value');
   confirmBtn.textContent = '✓';
-  confirmBtn.addEventListener('click', function(e) {
-    e.preventDefault();
-    advance();
-  });
+  confirmBtn.addEventListener('click', function(e) { e.preventDefault(); advance(); });
 
   container.appendChild(decBtn);
   container.appendChild(incBtn);
   container.appendChild(confirmBtn);
-
   incBtn.focus();
 }
 
 function renderChoice(step) {
   var container = document.getElementById('options');
   container.innerHTML = '';
-
   for (var i = 0; i < step.options.length; i++) {
     var btn = document.createElement('button');
     btn.className = 'focusable' + (i === 0 ? ' selected' : '');
-    btn.setAttribute('data-val', String(i));
+    btn.setAttribute('data-idx', String(i));
+    var label = typeof step.options[i] === 'object' ? step.options[i].label : step.options[i];
+    var val = typeof step.options[i] === 'object' ? step.options[i].value : step.options[i];
+    btn.setAttribute('data-val', String(val));
     btn.setAttribute('role', 'radio');
     btn.setAttribute('aria-checked', i === 0 ? 'true' : 'false');
-    btn.setAttribute('aria-label', step.options[i]);
-    btn.textContent = step.options[i];
+    btn.setAttribute('aria-label', label);
+    btn.textContent = label;
     btn.addEventListener('click', (function(idx) {
       return function(e) {
         e.preventDefault();
@@ -656,12 +689,29 @@ function renderChoice(step) {
     container.appendChild(btn);
   }
   container.style.display = '';
-
   container.querySelector('.focusable').focus();
 }
 
+function renderRange(step) {
+  // Range generates a choice list from min/max/step
+  var choices = generateRangeChoices(step);
+  // Temporarily create a synthetic choice step
+  var syntheticStep = {
+    id: step.id,
+    prompt: step.prompt,
+    type: 'choice',
+    options: choices,
+    next: step.next,
+    rule: step.rule,
+    content_source: step.content_source
+  };
+  renderChoice(syntheticStep);
+  // Store the original step reference for answer retrieval
+  currentStepId = step.id;
+}
+
 // ============================================================
-// FIX 1: Focus helpers
+// FOCUS HELPERS
 // ============================================================
 function selectOption(btn, val) {
   var opts = document.querySelectorAll('#options .focusable');
@@ -676,9 +726,8 @@ function selectOption(btn, val) {
 function selectChoiceOption(idx) {
   var opts = document.querySelectorAll('#options .focusable');
   for (var i = 0; i < opts.length; i++) {
-    var isSelected = i === idx;
-    opts[i].classList.toggle('selected', isSelected);
-    opts[i].setAttribute('aria-checked', isSelected ? 'true' : 'false');
+    opts[i].classList.toggle('selected', i === idx);
+    opts[i].setAttribute('aria-checked', i === idx ? 'true' : 'false');
   }
   if (opts[idx]) opts[idx].focus();
 }
@@ -693,37 +742,8 @@ function adjustCount(dir) {
 }
 
 // ============================================================
-// Navigation
+// NAVIGATION
 // ============================================================
-function getActiveAnswer() {
-  var step = steps[currentStepId];
-  if (!step) return null;
-
-  if (step.type === 'yesno') {
-    var active = document.querySelector('#options .focusable.selected');
-    return active ? active.getAttribute('data-val') : 'yes';
-  } else if (step.type === 'count') {
-    return countValue;
-  } else if (step.type === 'choice') {
-    var active = document.querySelector('#options .focusable.selected');
-    return active ? step.options[parseInt(active.getAttribute('data-val'))] : step.options[0];
-  } else if (step.type === 'info') {
-    return step.danger ? 'flagged' : 'noted';
-  }
-  return null;
-}
-
-function getNextStep(step, answer) {
-  if (step.type === 'yesno') {
-    return answer === 'yes' ? step.onYes : step.onNo;
-  } else if (step.type === 'count' || step.type === 'choice') {
-    return step.next;
-  } else if (step.type === 'info') {
-    return step.next;
-  }
-  return null;
-}
-
 function advance() {
   var step = steps[currentStepId];
   if (!step) return;
@@ -761,12 +781,11 @@ function advance() {
 function goBack() {
   if (stepHistory.length < 2) return;
   stepHistory.pop();
-  // Let popstate handler render the previous step
   window.history.back();
 }
 
 // ============================================================
-// Completion
+// COMPLETION
 // ============================================================
 function renderComplete() {
   state = 'complete';
@@ -781,14 +800,12 @@ function renderComplete() {
   document.getElementById('done-stats').textContent =
     stepHistory.length + ' steps · ' + flags.length + ' flags · ' + durStr;
 
-  var household = ROSTER[householdIndex];
-  var visitLabel = household.protocol;
-  saveCarryData(household.id, flags, visitLabel);
+  var visitLabel = activeProtocol ? activeProtocol.label : 'Unknown';
+  saveCarryData(flags, visitLabel);
 
   var record = {
-    householdId: household.id,
-    area: household.area,
-    protocol: household.protocol,
+    protocolId: activeProtocol ? activeProtocol.id : null,
+    protocol: visitLabel,
     answers: answers,
     flags: flags.map(function(f) { return { stepId: f.stepId, type: f.type, referral: f.referral }; }),
     stepCount: stepHistory.length,
@@ -799,58 +816,47 @@ function renderComplete() {
   };
 
   document.getElementById('done-sync').textContent = 'Open on phone to view record';
-
-  try {
-    localStorage.setItem('dastak_last_record', JSON.stringify(record));
-  } catch(e) {}
+  try { localStorage.setItem('dastak_last_record', JSON.stringify(record)); } catch(e) {}
 
   clearResume();
   showControls('complete');
-  updateProgress(protocol.steps.length, protocol.steps.length);
+  updateProgress(getEffectiveTotalSteps(), getEffectiveTotalSteps());
   document.getElementById('step-info').textContent = '';
 
-  // Push browser history entry for complete screen
   if (!navigatingViaPopstate) {
     window.history.pushState({screen:'complete'}, '', '#complete');
   }
 }
 
 // ============================================================
-// FIX 1 per MCP docs: D-pad Listener
-// Enter activates document.activeElement if .focusable
-// Arrow keys call moveFocus()
+// KEYBOARD HANDLER
 // ============================================================
 document.addEventListener('keydown', function(e) {
   switch (e.key) {
     case DPAD.UP:
       e.preventDefault();
-      if (state === 'idle') break;
-      if (state === 'complete') { goBack(); break; }
+      if (state === 'launch') break;
+      if (state === 'complete') { renderLauncher(); break; }
       if (state === 'count') { adjustCount(1); break; }
-      // For step/danger/info: go back
       goBack();
       break;
-
     case DPAD.DOWN:
       e.preventDefault();
       if (state === 'count') { adjustCount(-1); break; }
       moveFocus('down');
       break;
-
     case DPAD.LEFT:
       e.preventDefault();
-      if (state === 'idle') { cycleHousehold(-1); break; }
+      if (state === 'launch') { cycleLaunch(-1); break; }
       if (state === 'step') { moveFocus('left'); break; }
       if (state === 'count') { adjustCount(-1); break; }
       break;
-
     case DPAD.RIGHT:
       e.preventDefault();
-      if (state === 'idle') { cycleHousehold(1); break; }
+      if (state === 'launch') { cycleLaunch(1); break; }
       if (state === 'step') { moveFocus('right'); break; }
       if (state === 'count') { adjustCount(1); break; }
       break;
-
     case DPAD.SELECT:
       e.preventDefault();
       if (document.activeElement && document.activeElement.classList.contains('focusable')) {
@@ -859,202 +865,83 @@ document.addEventListener('keydown', function(e) {
         advance();
       }
       break;
-
     case DPAD.BACK:
-      // FIX 4 per MCP docs: Escape maps to history.back()
-      // Do not add synthetic history entries.
-      // If in visit, save progress first so relaunch resumes.
-      if (state !== 'idle' && currentStepId) {
+      if (state !== 'launch' && currentStepId) {
         saveProgress();
       }
       history.back();
       break;
-
     default:
-      return; // don't preventDefault on unhandled keys
+      return;
   }
 });
 
-function cycleHousehold(dir) {
-  householdIndex = (householdIndex + dir + ROSTER.length) % ROSTER.length;
-  resumeStep = null;
-  resumeTime = null;
-  computeIdle();
+function cycleLaunch(dir) {
+  launchIndex = (launchIndex + dir + PROTOCOLS.length) % PROTOCOLS.length;
+  var btns = document.querySelectorAll('#launch-options .focusable');
+  selectLaunchOption(launchIndex);
+  if (btns[launchIndex]) btns[launchIndex].focus();
 }
 
 // ============================================================
-// Audio: two tones only. WebAudio oscillator, no files.
+// AUDIO — two tones + speech
 // ============================================================
 var audioCtx = null;
-
 function ensureAudio() {
   if (!audioCtx) {
     try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
   }
-  if (audioCtx && audioCtx.state === 'suspended') {
-    audioCtx.resume().catch(function(){});
-  }
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume().catch(function(){});
   return audioCtx;
 }
 
 function playTone(freq, duration, peakGain) {
-  var ctx = ensureAudio();
-  if (!ctx) return;
+  var ctx = ensureAudio(); if (!ctx) return;
   try {
     var osc = ctx.createOscillator();
     var gain = ctx.createGain();
-    osc.type = 'sine';
-    osc.frequency.value = freq;
+    osc.type = 'sine'; osc.frequency.value = freq;
     gain.gain.setValueAtTime(0.0001, ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(peakGain, ctx.currentTime + duration * 0.3);
     gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration);
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime + duration + 0.05);
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.start(ctx.currentTime); osc.stop(ctx.currentTime + duration + 0.05);
   } catch(e) {}
-}
-
-// speechSynthesis helper — system voice at system volume.
-var VOICE_KEY = 'dastak_voice';
-
-function getVoices() {
-  if (!('speechSynthesis' in window)) return [];
-  return window.speechSynthesis.getVoices();
-}
-
-function populateVoices() {
-  var picker = document.getElementById('voice-picker');
-  if (!picker) return;
-  var voices = getVoices();
-  var saved = localStorage.getItem(VOICE_KEY);
-  picker.innerHTML = '';
-  for (var i = 0; i < voices.length; i++) {
-    var opt = document.createElement('option');
-    opt.value = i;
-    opt.textContent = voices[i].name + ' (' + voices[i].lang + ')';
-    if (saved === voices[i].name) opt.selected = true;
-    picker.appendChild(opt);
-  }
-  if (!saved && voices.length > 0) {
-    picker.selectedIndex = 0;
-    localStorage.setItem(VOICE_KEY, voices[0].name);
-  }
-}
-
-function getSelectedVoice() {
-  var picker = document.getElementById('voice-picker');
-  if (!picker || !picker.value) return null;
-  var voices = getVoices();
-  return voices[parseInt(picker.value)] || null;
-}
-
-function showAudioIndicator() {
-  var el = document.getElementById('audio-indicator');
-  if (el) el.classList.add('active');
-}
-
-function hideAudioIndicator() {
-  var el = document.getElementById('audio-indicator');
-  if (el) el.classList.remove('active');
 }
 
 function speak(text) {
   try {
     if (!('speechSynthesis' in window)) return;
     window.speechSynthesis.cancel();
-    showAudioIndicator();
+    var el = document.getElementById('audio-indicator');
+    if (el) el.style.display = 'flex';
     var u = new SpeechSynthesisUtterance(text);
-    u.rate = 1.0;
-    u.pitch = 1.0;
-    u.volume = 1.0;
-    var voice = getSelectedVoice();
-    if (voice) u.voice = voice;
-    u.onend = function() { hideAudioIndicator(); };
-    u.onerror = function() { hideAudioIndicator(); };
+    u.rate = 1.0; u.pitch = 1.0; u.volume = 1.0;
+    u.onend = function() { if (el) el.style.display = 'none'; };
+    u.onerror = function() { if (el) el.style.display = 'none'; };
     window.speechSynthesis.speak(u);
-  } catch(e) { hideAudioIndicator(); }
+  } catch(e) {}
 }
 
-// TONE 1: referral recorded (danger step) — speech first, oscillator fallback
 function playReferralTone() {
-  if ('speechSynthesis' in window) {
-    speak('Refer to the health facility');
-  } else {
-    playTone(440, 0.35, 0.15);
-  }
+  if ('speechSynthesis' in window) speak('Refer to the health facility');
+  else playTone(440, 0.35, 0.15);
 }
-// TONE 2: prior flag surfaced (carry-forward) — speech first, oscillator fallback
 function playCarryTone() {
-  if ('speechSynthesis' in window) {
-    speak('Flagged last visit');
-  } else {
-    playTone(660, 0.12, 0.05);
-  }
-}
-
-function startVisit() {
-  startedAt = Date.now();
-  stepHistory = [];
-  answers = {};
-  flags = [];
-
-  // Prime AudioContext inside user-gesture call stack
-  ensureAudio();
-
-  if (resumeStep) {
-    renderStep(resumeStep);
-  } else {
-    if (protocol && protocol.start) {
-      renderStep(protocol.start);
-    } else if (protocol && protocol.steps && protocol.steps.length > 0) {
-      renderStep(protocol.steps[0].id);
-    }
-  }
-}
-
-// Begin button click handler
-document.getElementById('idle-start').addEventListener('click', function(e) {
-  e.preventDefault();
-  startVisit();
-});
-
-// Test audio button — speaks a short phrase so the worker can verify audio works
-document.getElementById('idle-test-audio').addEventListener('click', function(e) {
-  e.preventDefault();
-  speak('Audio test');
-});
-
-// Voice picker — save selection to localStorage
-document.getElementById('voice-picker').addEventListener('change', function(e) {
-  var voice = getSelectedVoice();
-  if (voice) localStorage.setItem(VOICE_KEY, voice.name);
-});
-
-// Populate voices on load and when voices change
-if ('speechSynthesis' in window) {
-  populateVoices();
-  window.speechSynthesis.onvoiceschanged = function() { populateVoices(); };
+  if ('speechSynthesis' in window) speak('Flagged last visit');
+  else playTone(660, 0.12, 0.05);
 }
 
 // ============================================================
-// Init (Property 6: zero friction)
+// INIT
 // ============================================================
-var loadStart = Date.now();
-loadProtocol();
-window.history.replaceState({screen:'idle'}, '', '#idle');
+renderLauncher();
+window.history.replaceState({screen:'launch'}, '', '#launch');
 
-// ============================================================
-// Browser history navigation (popstate)
-// ============================================================
 window.addEventListener('popstate', function(e) {
   navigatingViaPopstate = true;
-  if (!e.state || e.state.screen === 'idle') {
-    state = 'idle';
-    currentStepId = null;
-    show('idle-area');
-    showControls('idle');
-    computeIdle();
+  if (!e.state || e.state.screen === 'launch') {
+    renderLauncher();
   } else if (e.state.screen === 'step' && e.state.stepId && steps[e.state.stepId]) {
     while (stepHistory.length > 0 && stepHistory[stepHistory.length - 1] !== e.state.stepId) {
       stepHistory.pop();
@@ -1065,34 +952,18 @@ window.addEventListener('popstate', function(e) {
   }
   navigatingViaPopstate = false;
 });
-setTimeout(function() {
-  var elapsed = Date.now() - loadStart;
-  if (elapsed > 3000) {
-    document.getElementById('offline-marker').textContent = 'loaded in ' + elapsed + 'ms';
-    document.getElementById('offline-marker').style.display = '';
-  }
-}, 3500);
 
-// ============================================================
-// FIX 5: Service worker registration per MCP build guide.
-// HTTPS required, no user permission needed.
-// ============================================================
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js').catch(function() {});
 }
 
-// ============================================================
-// Online/offline indicator wired to navigator.onLine events.
-// ============================================================
 var offlineMarker = document.getElementById('offline-marker');
 function updateOnlineStatus() {
   if (!navigator.onLine) {
     offlineMarker.textContent = 'offline — saved locally';
     offlineMarker.style.display = '';
   } else {
-    if (offlineMarker.textContent.indexOf('loaded in') === -1) {
-      offlineMarker.style.display = 'none';
-    }
+    offlineMarker.style.display = 'none';
   }
 }
 window.addEventListener('online', updateOnlineStatus);

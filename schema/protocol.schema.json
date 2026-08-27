@@ -1,0 +1,211 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Dastak Protocol",
+  "description": "A data-only protocol definition for the Dastak multi-protocol engine. The engine interprets this schema; it never contains clinical logic.",
+  "type": "object",
+  "required": ["id", "label", "start", "steps", "status"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique protocol identifier. Lowercase, underscores only.",
+      "pattern": "^[a-z][a-z0-9_]*$"
+    },
+    "label": {
+      "type": "string",
+      "description": "Human-readable label shown in the launcher and context band."
+    },
+    "start": {
+      "type": "string",
+      "description": "ID of the first step to render."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["draft", "demo-ready"],
+      "description": "'demo-ready' requires every step to have a non-UNSOURCED content_source."
+    },
+    "version": {
+      "type": "string",
+      "description": "Semantic version for this protocol file."
+    },
+    "steps": {
+      "type": "array",
+      "description": "Ordered array of step definitions. The engine builds a step map from this array.",
+      "items": {
+        "$ref": "#/definitions/step"
+      },
+      "minItems": 1
+    }
+  },
+  "definitions": {
+    "step": {
+      "type": "object",
+      "required": ["id", "prompt", "type", "content_source"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique step ID within this protocol."
+        },
+        "prompt": {
+          "type": "string",
+          "description": "The question or instruction shown to the worker. Must be worker-facing, about the beneficiary."
+        },
+        "type": {
+          "type": "string",
+          "enum": ["yesno", "choice", "count", "range", "info", "group"],
+          "description": "Step type. The engine renders exactly one frame per step."
+        },
+        "content_source": {
+          "type": "string",
+          "description": "'UNSOURCED' or a citation string. Build fails if demo-ready protocol has UNSOURCED steps."
+        },
+        "next": {
+          "type": ["string", "null"],
+          "description": "ID of the next step. null means end of protocol. For yesno, use onYes/onNo instead."
+        },
+        "danger": {
+          "type": "boolean",
+          "description": "If true, this is a danger/referral frame. Rendered with red accent."
+        },
+        "referral": {
+          "type": "string",
+          "description": "Referral text shown on danger frames."
+        },
+        "rule": {
+          "$ref": "#/definitions/rule",
+          "description": "Escalation rule: if the condition is met, jump to target step instead of next."
+        },
+        "options": {
+          "type": "array",
+          "description": "For choice/range types: the options the worker selects from.",
+          "items": {
+            "$ref": "#/definitions/option"
+          }
+        },
+        "onYes": {
+          "type": "string",
+          "description": "Step ID to go to on Yes (yesno type only)."
+        },
+        "onNo": {
+          "type": "string",
+          "description": "Step ID to go to on No (yesno type only)."
+        },
+        "unit": {
+          "type": "string",
+          "description": "Unit label for count/range types."
+        },
+        "min": {
+          "type": "number",
+          "description": "Minimum value for count/range types."
+        },
+        "max": {
+          "type": "number",
+          "description": "Maximum value for count/range types."
+        },
+        "step": {
+          "type": "number",
+          "description": "Step increment for count/range types."
+        },
+        "default": {
+          "type": "number",
+          "description": "Default value for count type."
+        },
+        "steps": {
+          "type": "array",
+          "description": "Child steps for group type.",
+          "items": {
+            "$ref": "#/definitions/step"
+          }
+        },
+        "skippable": {
+          "type": "boolean",
+          "description": "For group type: whether the group can be skipped. Default true.",
+          "default": true
+        },
+        "repeat": {
+          "$ref": "#/definitions/repeat",
+          "description": "For group type: repeat configuration bound to an earlier answer."
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "type": { "const": "yesno" } } },
+          "then": { "required": ["onYes", "onNo"] }
+        },
+        {
+          "if": { "properties": { "type": { "const": "choice" } } },
+          "then": { "required": ["options"] }
+        },
+        {
+          "if": { "properties": { "type": { "const": "range" } } },
+          "then": { "required": ["min", "max", "step"] }
+        },
+        {
+          "if": { "properties": { "type": { "const": "count" } } },
+          "then": { "required": ["min", "max", "step"] }
+        },
+        {
+          "if": { "properties": { "type": { "const": "group" } } },
+          "then": { "required": ["steps"] }
+        }
+      ]
+    },
+    "option": {
+      "type": "object",
+      "description": "An option within a choice or range step.",
+      "required": ["label", "value"],
+      "properties": {
+        "label": {
+          "type": "string",
+          "description": "Display text for this option."
+        },
+        "value": {
+          "description": "The value recorded when this option is selected."
+        },
+        "next": {
+          "type": ["string", "null"],
+          "description": "Optional per-option next step ID for branching. Falls through to step.next if absent."
+        }
+      }
+    },
+    "rule": {
+      "type": "object",
+      "description": "Escalation rule evaluated after the worker selects an answer.",
+      "required": ["condition", "target"],
+      "properties": {
+        "condition": {
+          "type": "object",
+          "required": ["op", "value"],
+          "properties": {
+            "op": {
+              "type": "string",
+              "enum": ["eq", "neq", "gt", "gte", "lt", "lte", "in"],
+              "description": "Comparison operator. 'in' checks if value is in an array."
+            },
+            "value": {
+              "description": "Value to compare against. For 'in', an array of values."
+            }
+          }
+        },
+        "target": {
+          "type": "string",
+          "description": "Step ID to jump to if the condition is met."
+        }
+      }
+    },
+    "repeat": {
+      "type": "object",
+      "description": "Repeat configuration for group steps.",
+      "required": ["bind", "count"],
+      "properties": {
+        "bind": {
+          "type": "string",
+          "description": "Step ID whose answer determines the repeat count."
+        },
+        "count": {
+          "type": "integer",
+          "description": "Maximum number of repetitions."
+        }
+      }
+    }
+  }
+}

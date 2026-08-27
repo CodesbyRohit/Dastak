@@ -1,0 +1,82 @@
+{
+  "id": "adherence",
+  "label": "Treatment Follow-Up",
+  "start": "doses",
+  "status": "structural",
+  "version": "1.0.0",
+  "steps": [
+    {
+      "id": "doses",
+      "prompt": "Doses taken since last visit?",
+      "type": "choice",
+      "options": [
+        { "label": "All doses taken", "value": "all", "next": "regimen" },
+        { "label": "Missed 1–2 doses", "value": "missed_few", "next": "flag_adherence" },
+        { "label": "Missed 3+ doses", "value": "missed_many", "next": "flag_adherence" }
+      ],
+      "content_source": "UNSOURCED"
+    },
+    {
+      "id": "flag_adherence",
+      "prompt": "Dose-miss pattern recorded",
+      "type": "info",
+      "danger": true,
+      "referral": "Review adherence barriers with the beneficiary.",
+      "next": "regimen",
+      "content_source": "UNSOURCED"
+    },
+    {
+      "id": "regimen",
+      "prompt": "Current medication phase?",
+      "type": "choice",
+      "options": ["Intensive phase", "Continuation phase", "Not sure"],
+      "next": "side_effects",
+      "content_source": "UNSOURCED"
+    },
+    {
+      "id": "side_effects",
+      "prompt": "Any reported side effects?",
+      "type": "yesno",
+      "onYes": "side_effect_detail",
+      "onNo": "weight",
+      "content_source": "UNSOURCED"
+    },
+    {
+      "id": "side_effect_detail",
+      "prompt": "Which side effects reported?",
+      "type": "choice",
+      "options": ["Nausea or vomiting", "Joint pain", "Vision changes", "Skin rash"],
+      "next": "flag_side_effects",
+      "content_source": "UNSOURCED"
+    },
+    {
+      "id": "flag_side_effects",
+      "prompt": "Side effects recorded",
+      "type": "info",
+      "danger": true,
+      "referral": "Report side effects to the supervisor.",
+      "next": "weight",
+      "content_source": "UNSOURCED"
+    },
+    {
+      "id": "weight",
+      "prompt": "Record the beneficiary's weight",
+      "type": "count",
+      "unit": "kg",
+      "min": 30.0,
+      "max": 120.0,
+      "step": 0.5,
+      "default": 55.0,
+      "next": "counselling",
+      "content_source": "UNSOURCED"
+    },
+    {
+      "id": "counselling",
+      "prompt": "Counselling topics covered",
+      "type": "choice",
+      "options": ["Completion importance", "Side effects awareness", "Nutrition support", "All three"],
+      "next": null,
+      "content_source": "UNSOURCED"
+    }
+  ]
+}
