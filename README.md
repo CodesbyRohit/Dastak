@@ -1,228 +1,192 @@
 # Dastak
 
-Multi-protocol health visit companion for India's ASHA community health workers, running on Meta Ray-Ban Display.
+**A hands-free, one-question-at-a-time field visit workflow for a 600×600 head-worn display.**
 
-## Why this exists on glasses
+Community health workers, such as India's ASHA workers on home-based newborn care visits, often work through a checklist with their hands full. Dastak shows exactly one question on a head-worn display such as Meta Ray-Ban Display. The worker answers with a four-way pad and a confirm gesture, and the app follows a fixed, reviewable protocol to the next question.
 
-Her hands are holding a newborn. It cannot be a phone. This is not a website that fits on glasses — it only works because the glasses exist.
+**Research prototype.**
+- Not clinically validated, and not deployed in care.
+- Not affiliated with or endorsed by Meta.
+- Every bundled protocol is draft or placeholder content awaiting qualified clinical review.
 
-## One question per frame
+| | |
+|---|---|
+| Wearable app | <https://dastak-orpin.vercel.app/> |
+| Project showcase | <https://dastak-orpin.vercel.app/showcase.html> |
+| Architecture | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) |
+| What the tests prove | [docs/TESTING.md](docs/TESTING.md) · results: [docs/TEST-RESULTS.md](docs/TEST-RESULTS.md) |
+| Audit (pre-upgrade) | [docs/AUDIT.md](docs/AUDIT.md) |
+| Device validation status | [docs/DEVICE-VALIDATION.md](docs/DEVICE-VALIDATION.md) |
 
-Every screen shows exactly one question or decision. Arrow keys to navigate, Enter to confirm. No scrolling, no menus, no lists, no free text, no voice input. This is the interaction model the judges praised — and it works identically across every protocol.
+## Design principle
 
-## Multi-protocol engine
+**The critical workflow executes protocols deterministically, and every step's source is explicit. Optional AI appears only in clearly separated, nonclinical supporting features.**
 
-Dastak scales by adding more protocols behind the same frame. Each protocol is a JSON file in `protocols/`. The engine interprets the JSON; it never contains clinical logic. Adding a new protocol means editing protocol JSON only.
+## How it works
 
-### Protocols
+```
+protocols/*.json ──► npm run verify / build ──► public/generated/registry.js
+                     (schema, graph, lifecycle,      │
+                      drift; Vercel build step)      ▼
+                                       glasses.html: engine.js (pure interpreter)
+                                                     + glasses-app.js (one frame, D-pad + Enter)
+                                                     + localStorage (resume, flags, last record)
+                                       no network: CSP connect-src 'none'
 
-| Protocol | File | Status | Structural axis |
-|---|---|---|---|
-| Routine Home Visit | `protocols/home-visit.json` | `demo-ready` | Baseline — HBNC Day 7 |
-| Danger Signs | `protocols/danger-signs.json` | `structural` | Branching + threshold escalation |
-| Treatment Follow-Up | `protocols/adherence.json` | `structural` | Carry-forward + mandatory checklist |
-| Post-Discharge | `protocols/post-discharge.json` | `structural` | Three-way choice + numeric range + sub-selection |
+plan.html / review.html ──► /api/plan, /api/review ──► optional AI (constrained, replaceable)
+```
 
-P0 is clinically sourced. P1–P3 are structural architecture tests — they prove the engine generalises without inventing clinical content. `UNSOURCED` placeholders will be filled by Rohit.
+- **Protocols are data.** Each JSON file defines steps of five frame types: `yesno`, `choice`, `count`, `range` and `info`. `info` steps marked `danger` are referral frames. Transitions are explicit step IDs, and thresholds are explicit comparisons.
+- **One source of truth.** The app's bundled registry is generated from `protocols/*.json`. `npm run verify` fails on any invalid protocol or any drift between the source and the bundle. It is also the Vercel build command, so an invalid protocol can't deploy.
+- **The engine is pure.** `public/js/engine.js` has no DOM, storage or network access. The app, the validator and the tests all run the same code.
+- **Device-only state.** An interrupted visit can be resumed for 24 hours, after every answer is replayed and checked. Carry-forward shows the last visit's referral flags for the same household and protocol, for 30 days. Only the last completed record is kept. Settings → *Delete data on this device* removes all of it.
+- **Supporting pages.** The planner may use AI only to reorder household IDs, and every reason it shows comes from a fixed rule. The review page always shows a counted summary; any AI description is filtered and labelled. Both work without AI.
 
-### Frame types
+Details: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
-The engine supports exactly five frame types. No sixth way to interact has ever been needed.
+## Run locally
 
-| Type | Input | Use case |
-|---|---|---|
-| `yesno` | Arrow keys + Enter | Binary questions |
-| `choice` | Arrow keys + Enter | Multiple options, each can route to a different next step |
-| `count` | Up/Down + Enter | Numeric values with +/- adjustment |
-| `range` | Arrow keys + Enter | Numeric values rendered as a generated choice list |
-| `info` | Enter only | Display-only frames (danger flags, completion) |
+Node 20 or later.
 
-## How to author a new protocol
+```
+npm ci
+npm start                # http://localhost:3000  (wearable app at /, showcase at /showcase.html)
+```
 
-Create a JSON file in `protocols/`. Here's the minimum:
+Use a 600×600 window and the keyboard:
+
+| Key | Action |
+|---|---|
+| ↑ ↓ | Move selection or adjust a number |
+| ← → | Choose; on the start frame, change household |
+| Enter | Confirm |
+| Esc / Backspace / browser Back | Back one question |
+
+Optional AI for the planner and review pages: copy `.env.example` to `.env` and set `AI_API_KEY`, `AI_API_URL` (HTTPS) and `AI_MODEL`. Without them, both pages are fully deterministic. The wearable app never uses AI or the network.
+
+Local and deployed behaviour come from the same code. `server.js` mounts the same `api/_lib` handlers that Vercel runs, and applies the redirects, rewrites and headers from `vercel.json`.
+
+## Tests
+
+```
+npm run verify           # protocol validation + generated-file drift
+npm test                 # 100 unit tests (node:test) with coverage
+npx playwright install chromium
+npm run test:e2e         # browser tests, Chromium 600×600, local server
+BASE_URL=https://… npm run test:deployed   # same browser tests against a deployment
+npm run report           # record results in docs/TEST-RESULTS.md and on the showcase
+```
+
+What each suite proves, and what it does not, is in [docs/TESTING.md](docs/TESTING.md). The latest recorded run is in [docs/TEST-RESULTS.md](docs/TEST-RESULTS.md).
+
+**Structural testing is not clinical validation.** The tests check how the software behaves:
+- every path through every protocol terminates
+- referral flags are counted correctly
+- nothing leaves the device during a visit
+- malformed input is rejected
+
+They cannot tell whether a question, a threshold or a referral instruction is clinically right. Only qualified clinical review can.
+
+## Authoring a protocol
+
+1. Create `protocols/<id-with-hyphens>.json`. The file name must match the `id`, with underscores written as hyphens.
+2. Add the id to `protocols/manifest.json` (this sets launcher order).
+3. Run `npm run build`, then `npm run verify`, and commit the JSON *and* the regenerated `public/generated/registry.js` and `public/sw.js`.
 
 ```json
 {
   "id": "my_protocol",
   "label": "My Protocol",
-  "start": "step1",
-  "status": "draft",
+  "start": "fever",
+  "status": "structural-test",
   "version": "1.0.0",
+  "provenance": {
+    "authoredBy": "Your name",
+    "sources": [],
+    "review": { "state": "unreviewed" }
+  },
   "steps": [
-    {
-      "id": "step1",
-      "prompt": "Does the beneficiary report fever?",
-      "type": "yesno",
-      "onYes": "step2",
-      "onNo": "step3",
-      "content_source": "UNSOURCED"
-    },
-    {
-      "id": "step2",
-      "prompt": "Temperature recorded",
-      "type": "info",
-      "danger": true,
-      "referral": "Refer to the health facility.",
-      "next": "step3",
-      "content_source": "UNSOURCED"
-    },
-    {
-      "id": "step3",
-      "prompt": "Assessment complete",
-      "type": "info",
-      "next": null,
-      "content_source": "UNSOURCED"
-    }
+    { "id": "fever", "prompt": "Does the beneficiary report fever?", "type": "yesno",
+      "onYes": "temp", "onNo": "done", "content_source": "UNSOURCED" },
+    { "id": "temp", "prompt": "Record the beneficiary's temperature", "type": "range",
+      "min": 35, "max": 42, "step": 0.5, "default": 36.5, "unit": "°C", "next": "done",
+      "rule": { "condition": { "op": "gt", "value": 38.5 }, "target": "refer" },
+      "content_source": "UNSOURCED" },
+    { "id": "refer", "prompt": "Refer to the health facility.", "type": "info", "danger": true,
+      "referral": "This check-in does not replace clinical judgement.", "next": null,
+      "content_source": "UNSOURCED" },
+    { "id": "done", "prompt": "Check complete.", "type": "info", "next": null,
+      "content_source": "UNSOURCED" }
   ]
 }
 ```
 
-### Rules
+**Content lifecycle (`status`):**
 
-- Every step needs `id`, `prompt`, `type`, and `content_source`
-- `yesno` steps need `onYes` and `onNo` (step IDs)
-- `choice` steps need `options` (array of strings or objects with `{ label, value, next }`)
-- `range` steps need `min`, `max`, `step`
-- Set `status: "demo-ready"` only when all `content_source` values are non-UNSOURCED
-- Set `status: "structural"` for architecture tests with UNSOURCED placeholders
-- Run `npm run verify` to validate before committing
-
-### Result frame safety
-
-Result frames must never present Dastak as a diagnostic system. Use neutral, worker-facing language:
-
-- "Responses suggest…"
-- "Consider referral to…"
-- "This check-in does not replace clinical judgement."
-
-Never use "The beneficiary has…" or "Diagnosis:" or any wording that claims Dastak has diagnosed a condition.
-
-### Branching
-
-Each choice option can carry its own `next`:
-
-```json
-{
-  "id": "feeling",
-  "prompt": "How is the beneficiary feeling?",
-  "type": "choice",
-  "options": [
-    { "label": "Well", "value": "well", "next": "vitals" },
-    { "label": "Unwell", "value": "unwell", "next": "referral" }
-  ],
-  "content_source": "UNSOURCED"
-}
-```
-
-### Escalation rules
-
-A step can have a `rule` that jumps to a different step if a condition is met:
-
-```json
-{
-  "id": "temp",
-  "prompt": "Record temperature",
-  "type": "range",
-  "min": 35.0, "max": 42.0, "step": 0.5,
-  "unit": "°C",
-  "next": "next_question",
-  "rule": {
-    "condition": { "op": "gt", "value": 38.5 },
-    "target": "referral"
-  },
-  "content_source": "UNSOURCED"
-}
-```
-
-## Privacy
-
-- No camera, no microphone — enforced by the platform.
-- No name, no phone number, no address. Households keyed by opaque ID.
-- Zero network calls in the glasses app — verifiable: `grep glasses.html for fetch/XMLHttpRequest` returns nothing.
-- Visit records live in device storage. Never on our servers.
-
-## Carry-forward
-
-When the worker reaches a step where a prior visit recorded a flag, Dastak shows one muted line beneath the question:
-
-```
-⟩ flagged at the Routine Home Visit visit
-```
-
-Verbatim recall of her own previously recorded answer. No interpretation, no inference, no generation. A lookup in localStorage, not an AI call.
-
-## Conformance
-
-Run the harness to validate all protocols:
-
-```
-npm run verify
-```
-
-This checks:
-- Every protocol has valid structure
-- Every `next` id resolves (no orphans, no unreachable steps)
-- Every frame yields exactly one decision (I5)
-- Every frame navigable with arrow keys + Enter alone
-- No `UNSOURCED` step in any `demo-ready` protocol
-
-## Run locally
-
-```
-npm install && npm start
-# http://localhost:3000/glasses.html
-```
-
-Or open `public/glasses.html` directly — no server required.
-
-## Architecture
-
-```
-public/
-  glasses.html          Multi-protocol engine + launcher (600×600)
-  index.html            Phone-facing entry (redirects to glasses.html)
-  record.html           Phone: completed visit record
-  plan.html             Phone: AI day planner
-  review.html           Phone: supervisor pattern summary
-  sw.js                 Service worker: offline shell
-schema/
-  protocol.schema.json  Formal JSON Schema for protocol definitions
-protocols/
-  home-visit.json       P0 — HBNC Day 7 (regression baseline)
-  danger-signs.json     P1 — branching + escalation
-  adherence.json        P2 — carry-forward + mandatory checklist
-  post-discharge.json   P3 — three-way choice + range + sub-selection
-verify.js               Conformance harness
-SCHEMA-CHANGELOG.md     Every schema amendment and why
-FINDINGS.md             Answer to the judges' question
-```
-
-## Invariants
-
-| # | Invariant | Enforcement |
+| Status | Meaning | Required |
 |---|---|---|
-| I1 | No AI in the clinical path | Zero network calls in glasses.html. Clinical logic is static JSON. |
-| I2 | Offline-first | Service worker caches app shell. All data embedded. |
-| I3 | No camera, no mic | Platform constraint. No voice/TTS layer exists. |
-| I4 | Arrow keys + Enter only | All frame types use this input model. |
-| I5 | One decision per frame | Verified by harness. |
-| I6 | No new interaction pattern | All new requirements reduce to existing frame types. |
-| I7 | No invented clinical content | content_source field on every step. Harness rejects UNSOURCED in demo-ready. |
-| I8 | FRIDAY-layer behaviours preserved | Anticipation, continuity, triage, carry-forward work across all protocols. |
+| `structural-test` | Exercises engine structure; placeholder content | — |
+| `clinical-draft` | Intended clinical content, not yet reviewed | — |
+| `reviewed-demo` | Reviewed by a named qualified person, for demonstration only | Cited `sources`, no `UNSOURCED` steps, review `{reviewer, role, date, scope}` |
+| `clinically-approved` | Approved for use by an accountable body | All of the above, plus `state: "approved"` and `approvalReference` |
 
-## Cut order
+**Rules:**
+- **Frame types:**
+  - `yesno` needs `onYes` and `onNo`.
+  - `choice` needs at least two options: all strings, or all `{label, value, next?}` objects.
+  - `count` and `range` need `min`, `max`, `step` and `default`, with the default on the step grid.
+  - `danger` is only allowed on `info` steps, and requires `referral`.
+- **Rules (`rule`):** a rule must be able to fire for some answers but not all. Cycles are rejected.
+- **Wording:** use worker-facing language that never implies a diagnosis. Never write "The beneficiary has…" or "Diagnosis:".
+- **IDs:** never change a shipped ID. Add the old one to `legacyIds`.
+- Schema history: [SCHEMA-CHANGELOG.md](SCHEMA-CHANGELOG.md).
 
-If implementation runway becomes constrained, cut scope in this order:
+**Bundled protocols:**
 
-1. P4
-2. Automated harness → fall back to manual verification checklist
-3. P3
+| Protocol | Status | Notes |
+|---|---|---|
+| Routine Home Visit (`home_visit`, formerly `hbnc_day7`) | `clinical-draft` | Prototype-authored newborn-care content; no cited source; **needs clinical review** |
+| Danger Signs (`danger_signs`) | `structural-test` | Placeholder; tests branching and threshold escalation |
+| Treatment Follow-Up (`adherence`) | `structural-test` | Placeholder; tests per-option branching and carry-forward |
+| Post-Discharge (`post_discharge`) | `structural-test` | Placeholder; tests nested choices, ranges and rules |
 
-Never cut:
-- P0 regression parity
-- SCHEMA-CHANGELOG.md
-- FINDINGS.md
-- P1
-- P2
+## Privacy boundaries
 
-Three deeply tested protocols are better than four half-finished protocols. A truthful structural protocol is better than invented clinical content. A documented architectural limitation is better than a fake abstraction.
+- **The wearable page can't make network requests.** It is served with CSP `connect-src 'none'`, and a browser test confirms that fetch, XHR and beacons are blocked during a visit.
+- **The service worker downloads only the app's own static files.** These are plain GET requests with no visit data.
+- **Camera, microphone and geolocation are disabled** by `Permissions-Policy`, in browsers that honour it. This is a site policy, not a platform guarantee.
+- **Nothing in the data identifies a person by name.** Households are opaque IDs, and the API rejects any additional fields.
+- **Visit data stays in one browser's localStorage.**
+  - It is **not encrypted**.
+  - It isn't synced or backed up.
+  - It is never accepted from or written to a URL.
+
+## Known limitations
+
+- **No clinical validation of any content.** The thresholds (38.5 °C, 140 mmHg) and the referral wording are unsourced.
+- **No device testing.** Nothing has been tested on Meta Ray-Ban Display hardware or with Meta's Web App Simulator. In particular, the mapping of the Back gesture is unverified; see [docs/DEVICE-VALIDATION.md](docs/DEVICE-VALIDATION.md).
+- **Missing features:** no cross-device record transfer, sync, encryption at rest, sign-in or localisation, and no repeat groups.
+- **Yes/no default:** the yes/no frame highlights "Yes" first, as in the original prototype. Whether any default is safe needs testing with workers.
+- **AI filter:** the review page's AI filter is a word list; it reduces risk but is not a guarantee.
+
+## Repository layout
+
+```
+protocols/         canonical protocol JSON + manifest.json
+schema/            protocol JSON Schema
+data/roster.json   demo households (opaque IDs)
+scripts/           build-registry.js, report.js, lib/validate-protocol.js
+public/            static site (Vercel output directory)
+  glasses.html     wearable app (also served at /)
+  showcase.html    project presentation
+  record.html, plan.html, review.html   phone-facing support pages
+  js/ css/ generated/ sw.js
+api/               Vercel functions (thin) + api/_lib shared handlers
+server.js          local server mirroring vercel.json
+verify.js          protocol conformance + drift check
+test/unit, test/e2e
+docs/              architecture, testing, results, audit, device validation
+FINDINGS.md        original generalisation findings (with corrections)
+```
+
+MIT licensed.

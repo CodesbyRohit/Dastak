@@ -1,9 +1,16 @@
 {
   "id": "home_visit",
+  "legacyIds": ["hbnc_day7"],
   "label": "Routine Home Visit",
   "start": "weight",
-  "status": "demo-ready",
+  "status": "clinical-draft",
   "version": "1.0.0",
+  "provenance": {
+    "authoredBy": "Original Dastak prototype author",
+    "sources": [],
+    "review": { "state": "unreviewed" },
+    "notes": "Home-based newborn care (HBNC) Day 7 content carried over unchanged from the original prototype (formerly id hbnc_day7, previously labelled demo-ready). The per-step content_source records authorship, not a clinical citation. Prompts, the 1.0-6.0 kg weight range and the referral wording require review by a qualified clinician before any clinical use."
+  },
   "steps": [
     {
       "id": "weight",

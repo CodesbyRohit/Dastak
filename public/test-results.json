@@ -1,0 +1,45 @@
+{
+  "recordedAt": "2026-10-20T07:14:11Z",
+  "commit": "5f3290c",
+  "node": "v24.14.1",
+  "browser": "Chromium ",
+  "coverage": 98.05,
+  "coverageDetail": {
+    "line": 98.05,
+    "branch": 90.48,
+    "funcs": 98.59
+  },
+  "suites": [
+    {
+      "name": "Protocol validation (npm run verify)",
+      "command": "npm run verify",
+      "total": 1,
+      "passed": 1,
+      "failed": 0
+    },
+    {
+      "name": "Unit tests (npm test)",
+      "command": "npm test",
+      "total": 100,
+      "passed": 100,
+      "failed": 0
+    },
+    {
+      "name": "Browser tests, local server (npm run test:e2e)",
+      "command": "npm run test:e2e",
+      "total": 60,
+      "passed": 60,
+      "failed": 0,
+      "skipped": 0
+    }
+  ],
+  "notCovered": [
+    "Clinical correctness of any protocol content (requires qualified clinical review).",
+    "Behaviour on Meta Ray-Ban Display hardware, its browser, and Neural Band gesture-to-key mapping.",
+    "Browsers other than Chromium (no Firefox or WebKit runs).",
+    "Screen-reader output (semantics are set; no assistive-technology session was run).",
+    "Real AI provider responses (provider behaviour is simulated with mocked responses).",
+    "Service-worker update from one deployed version to the next.",
+    "Field usability with health workers."
+  ]
+}

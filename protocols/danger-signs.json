@@ -2,8 +2,14 @@
   "id": "danger_signs",
   "label": "Danger Signs",
   "start": "fever",
-  "status": "structural",
+  "status": "structural-test",
   "version": "1.0.0",
+  "provenance": {
+    "authoredBy": "Dastak engine work (architecture test)",
+    "sources": [],
+    "review": { "state": "unreviewed" },
+    "notes": "Structural test of yes/no branching and threshold escalation. All content, including the 38.5 °C threshold and referral wording, is UNSOURCED placeholder text and must not be used clinically."
+  },
   "steps": [
     {
       "id": "fever",

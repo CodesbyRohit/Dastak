@@ -154,3 +154,22 @@ Triage and calibrated confidence are roster/planner features that live in the id
 3. **Automated runtime testing.** The harness validates structure and namespacing. It does not load protocols in a browser, simulate keyboard input, or verify rendered output. Runtime verification is manual.
 
 4. **Clinical content validity.** P1–P3 contain UNSOURCED placeholders. The structure generalizes; the content has not been validated.
+
+---
+
+## Corrections (2026-10-20, DevFest 2026 upgrade)
+
+The findings above were written before automated runtime testing existed. A browser-based audit ([docs/AUDIT.md](docs/AUDIT.md)) found that several statements in them didn't hold. Each correction below is backed by a regression test.
+
+| Earlier statement | What was actually true | Now |
+|---|---|---|
+| "P0 is clinically sourced" | Its only source was prototype authorship; there was no citation and no review | `home_visit` is `clinical-draft`, pending qualified review |
+| Continuity "Verified … same mechanism" | Resuming discarded earlier answers and referral flags (C2), and could show a false COMPLETE (C3) | Fixed. Resume is replayed and validated |
+| Carry-forward "Verified" | Flags were double-counted, and going back never removed them (H1) | Fixed. Flags are derived from the path |
+| "Every frame navigable with arrow keys + Enter (verified by harness)" | Count frames and protocol selection could not be completed with Enter (C4, C5). The harness printed this line without checking anything | Fixed, and tested keyboard-only in a browser |
+| "Triage … verified" | The triage line was a hard-coded sentence, and it was false for the roster (H3) | Fixed. It is now computed from the roster |
+| "Runtime verification is manual" (under "What Dastak does NOT prove") | — | Now automated: unit, browser, offline and HTTP-contract suites ([docs/TESTING.md](docs/TESTING.md)) |
+| Treatment Follow-Up tests a "mandatory checklist" | No checklist exists in the protocol or the engine | Description corrected |
+| Schema includes `group` for P4 | The engine never implemented it | Removed from the schema (Amendment 7) |
+
+The central finding still stands, and is now tested: four structurally different protocols run on one engine with no protocol-specific code.

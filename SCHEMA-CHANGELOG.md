@@ -76,6 +76,49 @@ Every amendment to the protocol schema, why it was needed, which invariant it to
 
 ---
 
+## Amendment 7 — Content lifecycle, provenance, strict validation (DevFest 2026 upgrade)
+
+**What:**
+- **`status`** is now one of four values:
+  - `structural-test`: placeholder content that exercises the engine.
+  - `clinical-draft`: intended clinical content, not yet reviewed by a qualified person.
+  - `reviewed-demo`: reviewed by a named qualified person for demonstration only.
+  - `clinically-approved`: approved by an accountable body; requires an approval reference.
+  The old values `draft`, `demo-ready` and `structural` are gone.
+- **New required `version`** (semver).
+- **New required `provenance`:** `{ authoredBy, sources[], review: { state, reviewer?, role?, date?, scope?, approvalReference? }, notes? }`.
+- **New optional `legacyIds[]`:** earlier IDs that still resolve.
+- **Count and range steps** now require `default`. The default must be on the step grid, within `[min, max]`.
+- **`options`** must be all strings or all objects, never mixed. Option values must be unique.
+- **`rule.condition.value`** must be a number for `gt/gte/lt/lte`, an array for `in`, and a string or number for `eq/neq`.
+- **Unknown fields are rejected.** Each frame type has a defined set of allowed fields; for example, `onYes` on a choice step fails.
+- **`danger`** is allowed on `info` steps only, and requires `referral`.
+- **Removed the `group` step type** (Amendment 5). The engine never implemented it, so a protocol using it would have passed the schema and then failed at runtime. Repeat groups remain deferred; they'll be re-added with an engine implementation and tests.
+
+**Migration (no clinical text changed):**
+
+| Protocol | Before | After |
+|---|---|---|
+| `home_visit` | `demo-ready` | `clinical-draft`, `legacyIds: ["hbnc_day7"]` |
+| `danger_signs`, `adherence`, `post_discharge` | `structural` | `structural-test` |
+
+`home_visit` was called "clinically sourced", but its only `content_source` is the prototype author. That is authorship, not a citation, and no qualified review is on record. **It needs clinical review before it can move to `reviewed-demo`.**
+
+**Why:**
+- The previous schema was never applied by the harness. If it had been, its `status` enum would have rejected three of the four protocols.
+- The lifecycle has to distinguish "tests the software" from "reviewed content" from "approved for care". A passing schema check must never read as clinical validation.
+
+**Enforcement:** `scripts/lib/validate-protocol.js`, run by `npm run verify` and by the Vercel build, applies:
+- the schema, via Ajv
+- semantic checks: transition targets, reachability, cycles, termination, numeric grids, rules that can never or always fire
+- lifecycle rules: `reviewed-demo` and `clinically-approved` need cited sources, complete review metadata and no `UNSOURCED` steps; `clinically-approved` also needs an approval reference
+
+**Invariant under pressure:** I7 (No invented clinical content). Provenance is now explicit and machine-checked. Clinical *correctness* still needs human review.
+
+**Cost:** No engine change for existing protocols. The engine rendering of `range` changed separately (a windowed list starting at `default`; see docs/ARCHITECTURE.md).
+
+---
+
 ## Summary
 
 | # | Amendment | Engine LOC | Renderer changes | New frame type |
@@ -86,6 +129,7 @@ Every amendment to the protocol schema, why it was needed, which invariant it to
 | 4 | Rule/escalation | ~20 | 0 | No |
 | 5 | group type | 0 (schema only) | 0 | No |
 | 6 | protocol.status | 0 | 0 | No |
+| 7 | Lifecycle, provenance, strict validation; `group` removed | 0 | Range rendered as windowed list | No |
 
 **Total engine additions:** ~40 lines. **New frame types added:** 0. **Renderer changes:** 0 (range delegates to existing choice renderer).
 

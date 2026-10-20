@@ -2,8 +2,14 @@
   "id": "post_discharge",
   "label": "Post-Discharge",
   "start": "overall",
-  "status": "structural",
+  "status": "structural-test",
   "version": "1.0.0",
+  "provenance": {
+    "authoredBy": "Dastak engine work (architecture test)",
+    "sources": [],
+    "review": { "state": "unreviewed" },
+    "notes": "Structural test of three-way choice, nested sub-selection, numeric range and rule escalation. All content, including the 38.5 °C and 140 mmHg thresholds and referral wording, is UNSOURCED placeholder text and must not be used clinically."
+  },
   "steps": [
     {
       "id": "overall",
