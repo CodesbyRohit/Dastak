@@ -117,6 +117,12 @@ It also proves:
 
 **Running against a deployment:** `npm run test:deployed` runs the same specs against `BASE_URL`, so routes, headers, API behaviour and offline behaviour are checked on the real hosting, not only on the local server.
 
+**Protected Vercel previews:**
+- Run the suite as `npx vercel env run -- npm run test:deployed` (after `vercel login` and `vercel link`). The short-lived development OIDC token is then sent as the `x-vercel-trusted-oidc-idp-token` header. It is never printed.
+- The browser fetches the service-worker script without test headers. Deployment Protection then redirects that request to a login page, and browsers refuse redirected worker scripts.
+- So on a protected preview the four offline tests are **skipped** with that reason. Skipped is never counted as passed.
+- Run them against the public production URL instead.
+
 ## Not tested
 
 - Clinical correctness of any protocol.

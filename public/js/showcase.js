@@ -36,7 +36,7 @@
     box.textContent = '';
     d.suites.forEach(function (s) {
       var failed = s.failed > 0;
-      box.appendChild(metric(s.passed + ' / ' + s.total, s.name + (failed ? ' · ' + s.failed + ' failed' : ' passed'), failed));
+      box.appendChild(metric(s.passed + ' / ' + s.total, s.name + (failed ? ' · ' + s.failed + ' failed' : ' passed') + (s.skipped ? ' · ' + s.skipped + ' skipped (not run)' : ''), failed));
     });
     var meta = el('p', 'meta');
     meta.textContent = 'Recorded ' + d.recordedAt + ' at commit ' + d.commit + ' · Node ' + d.node + (d.browser ? ' · ' + d.browser : '') +

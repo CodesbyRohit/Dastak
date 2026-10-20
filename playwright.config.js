@@ -20,7 +20,15 @@ module.exports = defineConfig({
   },
   projects: [
     { name: 'local', use: { baseURL: 'http://127.0.0.1:' + PORT } },
-    { name: 'deployed', use: { baseURL: deployed } }
+    {
+      name: 'deployed',
+      use: {
+        baseURL: deployed,
+        // Protected Vercel previews: run under `vercel env run -- …` so the short-lived development
+        // OIDC token is available. It is sent only as a request header and never logged.
+        extraHTTPHeaders: process.env.VERCEL_OIDC_TOKEN ? { 'x-vercel-trusted-oidc-idp-token': process.env.VERCEL_OIDC_TOKEN } : {}
+      }
+    }
   ],
   webServer: deployed ? undefined : {
     command: 'node server.js',
