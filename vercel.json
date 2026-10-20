@@ -1,18 +1,36 @@
 {
-  "buildCommand": null,
-  "outputDirectory": "public",
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
-  "rewrites": [{ "source": "/", "destination": "/glasses.html" }],
+  "installCommand": "npm ci",
+  "buildCommand": "npm run verify",
+  "outputDirectory": "public",
+  "redirects": [
+    { "source": "/index.html", "destination": "/glasses.html", "permanent": false }
+  ],
+  "rewrites": [
+    { "source": "/", "destination": "/glasses.html" }
+  ],
   "headers": [
     {
-      "source": "/icon-96.png",
+      "source": "/(.*)",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'" },
+        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=(), usb=(), bluetooth=(), payment=()" },
+        { "key": "Referrer-Policy", "value": "no-referrer" },
+        { "key": "X-Content-Type-Options", "value": "nosniff" }
+      ]
+    },
+    {
+      "source": "/",
+      "headers": [
+        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self'; connect-src 'none'; media-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'" },
+        { "key": "Cache-Control", "value": "no-cache" }
       ]
     },
     {
       "source": "/glasses.html",
       "headers": [
+        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self'; connect-src 'none'; media-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'" },
         { "key": "Cache-Control", "value": "no-cache" }
       ]
     },
@@ -20,6 +38,18 @@
       "source": "/sw.js",
       "headers": [
         { "key": "Cache-Control", "value": "no-cache" }
+      ]
+    },
+    {
+      "source": "/(js|generated|css)/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache" }
+      ]
+    },
+    {
+      "source": "/icon-96.png",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
       ]
     }
   ]
