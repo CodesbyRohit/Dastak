@@ -85,7 +85,7 @@ const md = [
   '| Commit | `' + report.commit + '` |',
   '| Node | ' + report.node + ' |',
   '| Browser | ' + (browser || 'unknown') + ' |',
-  '| Overall | ' + (allPassed ? '**All suites passed**' : '**FAILURES — see below**') + ' |',
+  '| Overall | ' + (allPassed ? (suites.some(s => s.skipped) ? '**No failures** (' + suites.reduce((n, s) => n + (s.skipped || 0), 0) + ' skipped, not run)' : '**All suites passed**') : '**FAILURES — see below**') + ' |',
   '',
   '| Suite | Command | Passed | Failed | Skipped | Total |', '|---|---|---|---|---|---|',
   ...suites.map(s => '| ' + s.name + ' | `' + s.command + '` | ' + s.passed + ' | ' + s.failed + ' | ' + (s.skipped || 0) + ' | ' + s.total + ' |'),
