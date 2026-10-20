@@ -210,11 +210,11 @@ This document records the state *before* the DevFest 2026 upgrade. Each finding 
 
 | ID | Severity | Status after upgrade |
 |---|---|---|
-| C1 | Critical | _pending_ |
-| C2 | Critical | _pending_ |
-| C3 | Critical | _pending_ |
-| C4 | Critical | _pending_ |
-| C5 | Critical | _pending_ |
-| C6 | Critical | _pending_ |
-| H1–H10 | High | _pending_ |
-| M1–M10 | Medium | _pending_ |
+| C1 | Critical | Fixed. `/` serves the multi-protocol app; legacy engine removed |
+| C2 | Critical | Fixed. Resume replays and validates the saved path |
+| C3 | Critical | Fixed. Error frame, never COMPLETE; per-visit resume state |
+| C4 | Critical | Fixed. Enter always confirms |
+| C5 | Critical | Fixed. Enter starts the selected protocol |
+| C6 | Critical | Fixed. No fragment import; validated records; textContent only |
+| H1–H10 | High | Fixed (see regression tests in docs/TESTING.md) |
+| M1–M10 | Medium | Fixed (M10 by `npm audit fix`; Express 4.22.3) |
