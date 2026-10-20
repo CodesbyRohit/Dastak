@@ -1,6 +1,6 @@
 {
-  "recordedAt": "2026-10-20T07:35:19Z",
-  "commit": "b560057+uncommitted",
+  "recordedAt": "2026-10-20T07:56:33Z",
+  "commit": "5e01b1c+uncommitted",
   "node": "v24.14.1",
   "browser": "Chromium 141.0.7390.37",
   "coverage": 98.05,
@@ -33,12 +33,12 @@
       "skipped": 0
     },
     {
-      "name": "Browser + HTTP tests against https://dastak-9x8ng5t0o-codesbyrohits-projects.vercel.app",
-      "command": "BASE_URL=https://dastak-9x8ng5t0o-codesbyrohits-projects.vercel.app npm run test:deployed",
+      "name": "Browser + HTTP tests against https://dastak-orpin.vercel.app",
+      "command": "BASE_URL=https://dastak-orpin.vercel.app npm run test:deployed",
       "total": 60,
-      "passed": 56,
+      "passed": 60,
       "failed": 0,
-      "skipped": 4
+      "skipped": 0
     }
   ],
   "notCovered": [
@@ -47,7 +47,10 @@
     "Browsers other than Chromium (no Firefox or WebKit runs).",
     "Screen-reader output (semantics are set; no assistive-technology session was run).",
     "Real AI provider responses (provider behaviour is simulated with mocked responses).",
-    "Service-worker update from one deployed version to the next.",
+    "Service-worker update from one deployed version to the next (audit H10 is only partially tested).",
+    "Speech output, including whether the referral announcement matches the on-screen text (audit H4, fixed in code, not tested).",
+    "Every numeric value: count and range inputs are tested at selected values (bounds, default, around each rule threshold), not exhaustively.",
+    "Browser enforcement of Permissions-Policy (only the header is checked) and API abuse (no rate limiting exists).",
     "Field usability with health workers."
   ]
 }
