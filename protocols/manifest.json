@@ -1,0 +1,4 @@
+{
+  "description": "Protocols bundled into the wearable app, in launcher order. Every protocols/*.json file (other than this one) must be listed exactly once.",
+  "order": ["home_visit", "danger_signs", "adherence", "post_discharge"]
+}

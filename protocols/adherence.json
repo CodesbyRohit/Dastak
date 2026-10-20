@@ -2,8 +2,14 @@
   "id": "adherence",
   "label": "Treatment Follow-Up",
   "start": "doses",
-  "status": "structural",
+  "status": "structural-test",
   "version": "1.0.0",
+  "provenance": {
+    "authoredBy": "Dastak engine work (architecture test)",
+    "sources": [],
+    "review": { "state": "unreviewed" },
+    "notes": "Structural test of per-option branching and carry-forward. All content is UNSOURCED placeholder text and must not be used clinically."
+  },
   "steps": [
     {
       "id": "doses",
