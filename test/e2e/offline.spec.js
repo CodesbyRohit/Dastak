@@ -9,6 +9,13 @@ test.use({ serviceWorkers: 'allow' });
 
 async function installAndGoOffline(page, context) {
   await page.goto('/');
+  // Vercel Deployment Protection redirects the browser's own service-worker script request to a
+  // login page (test auth headers are not sent on it), and browsers refuse redirected worker
+  // scripts. That only happens on protected previews; report it as skipped, never as passed.
+  const registration = await page.evaluate(() =>
+    navigator.serviceWorker.register('/sw.js').then(() => 'ok', e => e.message));
+  test.skip(/behind a redirect/i.test(registration), 'service worker blocked by deployment protection: ' + registration);
+  expect(registration).toBe('ok');
   await page.evaluate(async () => {
     await navigator.serviceWorker.ready;
     if (!navigator.serviceWorker.controller) {

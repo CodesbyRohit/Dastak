@@ -47,10 +47,8 @@ if (process.env.BASE_URL) {
 }
 
 let browser = '';
-try {
-  const v = run('node', ['-e', "require('@playwright/test').chromium.launch().then(async b=>{console.log(b.version());await b.close()})"]);
-  browser = 'Chromium ' + v.stdout.trim();
-} catch (e) { /* optional */ }
+const probe = spawnSync(process.execPath, ['-e', "require('@playwright/test').chromium.launch().then(async b=>{console.log(b.version());await b.close()})"], { cwd: ROOT, encoding: 'utf8' });
+if (probe.status === 0 && probe.stdout.trim()) browser = 'Chromium ' + probe.stdout.trim();
 const sha = run('git', ['rev-parse', '--short', 'HEAD']).stdout.trim();
 const dirty = run('git', ['status', '--porcelain', '--', 'public', 'api', 'scripts', 'protocols', 'data', 'schema', 'test', 'server.js', 'verify.js']).stdout.trim() ? '+uncommitted' : '';
 
@@ -89,8 +87,9 @@ const md = [
   '| Browser | ' + (browser || 'unknown') + ' |',
   '| Overall | ' + (allPassed ? '**All suites passed**' : '**FAILURES — see below**') + ' |',
   '',
-  '| Suite | Command | Passed | Failed | Total |', '|---|---|---|---|---|',
-  ...suites.map(s => '| ' + s.name + ' | `' + s.command + '` | ' + s.passed + ' | ' + s.failed + ' | ' + s.total + ' |'),
+  '| Suite | Command | Passed | Failed | Skipped | Total |', '|---|---|---|---|---|---|',
+  ...suites.map(s => '| ' + s.name + ' | `' + s.command + '` | ' + s.passed + ' | ' + s.failed + ' | ' + (s.skipped || 0) + ' | ' + s.total + ' |'),
+  ...(suites.some(s => s.skipped) ? ['', 'Skipped tests did not run and are not counted as passed. On a protected Vercel preview the offline (service-worker) tests skip, because Deployment Protection redirects the service-worker script request.'] : []),
   '',
   coverage ? 'Unit-test coverage of `public/js`, `api` and `scripts`: ' + coverage.line + '% lines, ' + coverage.branch + '% branches, ' + coverage.funcs + '% functions (Node built-in coverage). The browser-only files (`glasses-app.js`, page scripts) are exercised by the Playwright suite, which does not measure coverage.' : 'Coverage was not reported.',
   '',
@@ -103,7 +102,7 @@ const md = [
 ].join('\n');
 fs.writeFileSync(path.join(ROOT, 'docs', 'TEST-RESULTS.md'), md);
 
-for (const s of suites) console.log((s.failed ? '✗ ' : '✓ ') + s.name + ': ' + s.passed + '/' + s.total + (s.failed ? ' (' + s.failed + ' failed)' : '') + (s.error ? '\n  ' + s.error : ''));
+for (const s of suites) console.log((s.failed ? '✗ ' : '✓ ') + s.name + ': ' + s.passed + '/' + s.total + (s.failed ? ' (' + s.failed + ' failed)' : '') + (s.skipped ? ' (' + s.skipped + ' skipped)' : '') + (s.error ? '\n  ' + s.error : ''));
 if (coverage) console.log('coverage: ' + coverage.line + '% lines');
 console.log('wrote docs/TEST-RESULTS.md and public/test-results.json');
 process.exit(allPassed ? 0 : 1);
