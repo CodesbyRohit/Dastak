@@ -19,9 +19,17 @@ const vercel = JSON.parse(fs.readFileSync(path.join(__dirname, 'vercel.json'), '
 
 // Converts the subset of Vercel source patterns used in vercel.json ("/", "/sw.js", "/(.*)",
 // "/(a|b)/(.*)") to regular expressions.
+// Text inside parentheses is a regular-expression group; everything else is literal.
 function sourceToRegExp(source) {
-  const escaped = source.replace(/[.+?^${}[\]\\]/g, '\\$&');
-  return new RegExp('^' + escaped + '$');
+  let out = '';
+  let depth = 0;
+  for (const ch of source) {
+    if (ch === '(') depth++;
+    if (depth > 0) out += ch;
+    else out += ch.replace(/[.*+?^${}[\]\\|]/, '\\$&');
+    if (ch === ')') depth--;
+  }
+  return new RegExp('^' + out + '$');
 }
 const headerRules = vercel.headers.map(r => ({ re: sourceToRegExp(r.source), headers: r.headers }));
 

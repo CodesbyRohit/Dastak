@@ -67,8 +67,7 @@ function validateProtocol(protocol, where) {
     if (s.danger === false) errors.push(err('FIELD_NOT_ALLOWED', at, 'Omit "danger" instead of setting it to false'));
 
     if (s.type === 'choice') {
-      const kinds = new Set(s.options.map(o => typeof o));
-      if (kinds.size > 1) errors.push(err('MIXED_OPTIONS', at, 'Options must be all strings or all objects'));
+      // Mixed string/object options are rejected by the schema (anyOf) before this point.
       const values = Engine.normalizeOptions(s).map(o => o.value);
       if (new Set(values).size !== values.length) errors.push(err('DUPLICATE_OPTION_VALUE', at, 'Option values must be unique'));
       Engine.normalizeOptions(s).forEach((o, i) => {

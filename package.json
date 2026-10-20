@@ -9,7 +9,7 @@
     "dev": "node server.js",
     "build": "node scripts/build-registry.js",
     "verify": "node verify.js",
-    "test": "node --test --experimental-test-coverage --test-coverage-include=public/js/**/*.js --test-coverage-include=api/**/*.js --test-coverage-include=scripts/**/*.js test/unit/",
+    "test": "node --test --experimental-test-coverage --test-coverage-include=public/js/**/*.js --test-coverage-include=api/**/*.js --test-coverage-include=scripts/**/*.js \"test/unit/*.test.js\"",
     "test:e2e": "playwright test --project=local",
     "test:deployed": "playwright test --project=deployed",
     "test:all": "npm run verify && npm test && npm run test:e2e",

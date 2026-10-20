@@ -13,7 +13,9 @@ function config(env) {
   let parsed;
   try { parsed = new URL(url); } catch (e) { return { ok: false, reason: 'AI endpoint misconfigured' }; }
   if (parsed.protocol !== 'https:') return { ok: false, reason: 'AI endpoint must use HTTPS' };
-  return { ok: true, key, url, model: env.AI_MODEL || 'gpt-4o-mini' };
+  const t = Number(env.AI_TIMEOUT_MS);
+  const timeoutMs = t >= 100 && t <= 30000 ? t : TIMEOUT_MS;
+  return { ok: true, key, url, model: env.AI_MODEL || 'gpt-4o-mini', timeoutMs };
 }
 
 async function chat(env, system, user, temperature) {
@@ -29,7 +31,7 @@ async function chat(env, system, user, temperature) {
         temperature,
         messages: [{ role: 'system', content: system }, { role: 'user', content: user }]
       }),
-      signal: AbortSignal.timeout(TIMEOUT_MS)
+      signal: AbortSignal.timeout(cfg.timeoutMs)
     });
   } catch (e) {
     return { ok: false, reason: e && e.name === 'TimeoutError' ? 'AI provider timed out' : 'AI provider unreachable' };
