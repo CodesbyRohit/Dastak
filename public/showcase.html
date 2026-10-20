@@ -114,7 +114,7 @@
         <text x="540" y="404" class="d-sub">reorder IDs · describe counts</text>
         <text x="776" y="378" class="d-sub">output checked, else discarded</text>
       </svg>
-      <figcaption>Clinical content flows one way: canonical JSON → validated build → bundled registry → interpreter. Nothing in the visit path calls a server or a model.</figcaption>
+      <figcaption>Clinical content flows one way: canonical JSON → validated build → bundled registry → interpreter. During a visit the page opens no network connections and calls no model. It only loads its own files.</figcaption>
     </figure>
     <div class="grid3">
       <article class="card">
@@ -157,7 +157,7 @@
         <caption class="sr-only">What stays on the device, what crosses the network, and how each is enforced</caption>
         <thead><tr><th scope="col">Data or traffic</th><th scope="col">Where it goes</th><th scope="col">How this is ensured</th></tr></thead>
         <tbody>
-          <tr><td>Visit answers, referral flags, interrupted visits, last record</td><td>This browser's localStorage only. Not encrypted at rest.</td><td>The wearable page is served with CSP <code>connect-src 'none'</code>: the browser blocks fetch, XHR, WebSocket and beacons from the page. A browser test attempts all three and checks they are blocked.</td></tr>
+          <tr><td>Visit answers, referral flags, interrupted visits, last record</td><td>This browser's localStorage only. Not encrypted at rest.</td><td>The wearable page is served with CSP <code>connect-src 'none'</code>: the browser blocks fetch, XHR, WebSocket and beacons from the page. A Chromium test attempts fetch, XHR and a beacon and checks all are blocked. The page still loads its own same-origin files.</td></tr>
           <tr><td>App files (HTML, JS, icons)</td><td>Fetched from this site by the service worker on install and when revalidating online.</td><td>GET requests for static files only, with no query strings or bodies. The service worker never reads visit data and never caches <code>/api</code>.</td></tr>
           <tr><td>Camera, microphone, location</td><td>Not used.</td><td><code>Permissions-Policy</code> disables them for every page in browsers that honour it. This is a site policy, not a guarantee from the glasses platform.</td></tr>
           <tr><td>Planner roster (phone page)</td><td>Opaque household ID, area, protocol name, days due, last flag. Sent to <code>/api/plan</code>; forwarded to an AI provider only if one is configured.</td><td>The server rejects any other field, so a name cannot be passed through. The AI may only return an ordering of the same IDs.</td></tr>
@@ -182,7 +182,7 @@
       <table class="status">
         <thead><tr><th scope="col">Capability</th><th scope="col">Status</th><th scope="col">Notes</th></tr></thead>
         <tbody>
-          <tr><td>Deterministic protocol engine, 5 frame types</td><td><span class="tag ok">Implemented</span></td><td>Tested exhaustively over every bundled protocol's paths.</td></tr>
+          <tr><td>Deterministic protocol engine, 5 frame types</td><td><span class="tag ok">Implemented</span></td><td>Every step and transition of every bundled protocol is unit-tested. Numeric answers are tested at selected values (bounds, default, around each threshold), not exhaustively.</td></tr>
           <tr><td>Protocol validation, generated registry, drift check</td><td><span class="tag ok">Implemented</span></td><td>Runs in the Vercel build; a failing check blocks deployment.</td></tr>
           <tr><td>Offline app shell, resume, carry-forward, referral flags</td><td><span class="tag ok">Implemented</span></td><td>Browser-tested, including offline reload.</td></tr>
           <tr><td>Planner and review with constrained optional AI</td><td><span class="tag ok">Implemented</span></td><td>Deterministic fallback for every failure; AI is off unless credentials are set.</td></tr>
@@ -222,6 +222,8 @@ BASE_URL=https://… npm run test:deployed</code></pre>
       <li>The yes/no frame highlights "Yes" first, carried over from the original prototype. Whether any default is safe needs testing with real workers.</li>
       <li>Behaviour on Meta's hardware, including how gestures map to keys and to Back, has not been verified.</li>
       <li>The AI output filter is a coarse word list. It reduces risk; it does not guarantee nonclinical output.</li>
+      <li>The planner and review APIs have no rate limiting or authentication. That is harmless while no AI credentials are set, but must be fixed before AI is enabled.</li>
+      <li>No health-worker usability testing and no clinical review have been done.</li>
     </ul>
   </section>
 

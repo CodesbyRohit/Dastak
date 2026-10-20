@@ -31,7 +31,8 @@ protocols/*.json ──► npm run verify / build ──► public/generated/reg
                                        glasses.html: engine.js (pure interpreter)
                                                      + glasses-app.js (one frame, D-pad + Enter)
                                                      + localStorage (resume, flags, last record)
-                                       no network: CSP connect-src 'none'
+                                       no outgoing connections: CSP connect-src 'none'
+                                       (the page still loads its own files)
 
 plan.html / review.html ──► /api/plan, /api/review ──► optional AI (constrained, replaceable)
 ```
@@ -39,7 +40,7 @@ plan.html / review.html ──► /api/plan, /api/review ──► optional AI (
 - **Protocols are data.** Each JSON file defines steps of five frame types: `yesno`, `choice`, `count`, `range` and `info`. `info` steps marked `danger` are referral frames. Transitions are explicit step IDs, and thresholds are explicit comparisons.
 - **One source of truth.** The app's bundled registry is generated from `protocols/*.json`. `npm run verify` fails on any invalid protocol or any drift between the source and the bundle. It is also the Vercel build command, so an invalid protocol can't deploy.
 - **The engine is pure.** `public/js/engine.js` has no DOM, storage or network access. The app, the validator and the tests all run the same code.
-- **Device-only state.** An interrupted visit can be resumed for 24 hours, after every answer is replayed and checked. Carry-forward shows the last visit's referral flags for the same household and protocol, for 30 days. Only the last completed record is kept. Settings → *Delete data on this device* removes all of it.
+- **Device-only state.** An interrupted visit can be resumed for 24 hours, after every answer is replayed and checked. Carry-forward shows the last visit's referral flags for the same household and protocol, for 30 days. Only the last completed record is kept. Settings → *Delete data on this device* removes all of it immediately. Expiry is enforced when data is read, not on a timer; see [Known limitations](#known-limitations).
 - **Supporting pages.** The planner may use AI only to reorder household IDs, and every reason it shows comes from a fixed rule. The review page always shows a counted summary; any AI description is filtered and labelled. Both work without AI.
 
 Details: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
@@ -62,7 +63,7 @@ Use a 600×600 window and the keyboard:
 | Enter | Confirm |
 | Esc / Backspace / browser Back | Back one question |
 
-Optional AI for the planner and review pages: copy `.env.example` to `.env` and set `AI_API_KEY`, `AI_API_URL` (HTTPS) and `AI_MODEL`. Without them, both pages are fully deterministic. The wearable app never uses AI or the network.
+Optional AI for the planner and review pages: copy `.env.example` to `.env` and set `AI_API_KEY`, `AI_API_URL` (HTTPS) and `AI_MODEL`. Without them, both pages are fully deterministic. The wearable app never uses AI, and it opens no network connections during a visit. It does load its own HTML, scripts and icons from this site, or from the service-worker cache.
 
 Local and deployed behaviour come from the same code. `server.js` mounts the same `api/_lib` handlers that Vercel runs, and applies the redirects, rewrites and headers from `vercel.json`.
 
@@ -80,10 +81,13 @@ npm run report           # record results in docs/TEST-RESULTS.md and on the sho
 What each suite proves, and what it does not, is in [docs/TESTING.md](docs/TESTING.md). The latest recorded run is in [docs/TEST-RESULTS.md](docs/TEST-RESULTS.md).
 
 **Structural testing is not clinical validation.** The tests check how the software behaves:
-- every path through every protocol terminates
-- referral flags are counted correctly
-- nothing leaves the device during a visit
-- malformed input is rejected
+- **Termination:** every path through every bundled protocol terminates. The validator proves this from the protocol graph, and the engine test walks every step and transition.
+- **Numeric inputs are sampled, not exhaustive.** Weight, temperature and similar inputs are tested at selected values: the bounds, the default, and either side of each rule threshold. Not every value is tried.
+- **Referral flags** are counted correctly on the tested paths.
+- **During a tested visit, the page makes no requests.** Deliberate fetch, XHR and beacon calls are blocked by CSP. This was tested in Chromium with the service worker disabled during the visit; the app's own files load before the visit starts.
+- **Malformed input** to the validator, storage layer and API is rejected.
+
+Some fixed defects have **no** automated regression test. They are listed in [docs/AUDIT.md](docs/AUDIT.md) and [docs/TESTING.md](docs/TESTING.md).
 
 They cannot tell whether a question, a threshold or a referral instruction is clinically right. Only qualified clinical review can.
 
@@ -145,14 +149,14 @@ They cannot tell whether a question, a threshold or a referral instruction is cl
 
 | Protocol | Status | Notes |
 |---|---|---|
-| Routine Home Visit (`home_visit`, formerly `hbnc_day7`) | `clinical-draft` | Prototype-authored newborn-care content; no cited source; **needs clinical review** |
+| Routine Home Visit (`home_visit`, formerly `hbnc_day7`) | `clinical-draft` | Prototype-authored newborn-care content; no cited source; **needs clinical review**. Its `content_source` names the prototype author, so `npm run verify` reports "0 UNSOURCED". That count means "not marked UNSOURCED", **not** "clinically sourced". |
 | Danger Signs (`danger_signs`) | `structural-test` | Placeholder; tests branching and threshold escalation |
 | Treatment Follow-Up (`adherence`) | `structural-test` | Placeholder; tests per-option branching and carry-forward |
 | Post-Discharge (`post_discharge`) | `structural-test` | Placeholder; tests nested choices, ranges and rules |
 
 ## Privacy boundaries
 
-- **The wearable page can't make network requests.** It is served with CSP `connect-src 'none'`, and a browser test confirms that fetch, XHR and beacons are blocked during a visit.
+- **The wearable page can't open network connections.** It is served with CSP `connect-src 'none'` (meta tag and header), which blocks fetch, XHR, WebSocket, EventSource and beacons. A Chromium test confirms that fetch, XHR and beacon are blocked. The page still loads its own same-origin HTML, scripts and icons.
 - **The service worker downloads only the app's own static files.** These are plain GET requests with no visit data.
 - **Camera, microphone and geolocation are disabled** by `Permissions-Policy`, in browsers that honour it. This is a site policy, not a platform guarantee.
 - **Nothing in the data identifies a person by name.** Households are opaque IDs, and the API rejects any additional fields.
@@ -163,11 +167,15 @@ They cannot tell whether a question, a threshold or a referral instruction is cl
 
 ## Known limitations
 
-- **No clinical validation of any content.** The thresholds (38.5 °C, 140 mmHg) and the referral wording are unsourced.
+- **No clinical validation of any content.** The thresholds (38.5 °C, 140 mmHg) are unsourced placeholders. All referral wording is unsourced or unreviewed. No protocol is clinically approved.
+- **No health-worker usability testing** has been done.
 - **No device testing.** Nothing has been tested on Meta Ray-Ban Display hardware or with Meta's Web App Simulator. In particular, the mapping of the Back gesture is unverified; see [docs/DEVICE-VALIDATION.md](docs/DEVICE-VALIDATION.md).
 - **Missing features:** no cross-device record transfer, sync, encryption at rest, sign-in or localisation, and no repeat groups.
 - **Yes/no default:** the yes/no frame highlights "Yes" first, as in the original prototype. Whether any default is safe needs testing with workers.
 - **AI filter:** the review page's AI filter is a word list; it reduces risk but is not a guarantee.
+- **No API rate limiting or authentication.** Anyone can call `/api/plan` and `/api/review`. This is harmless while AI is unconfigured (as in production at the time of writing), because the responses are computed locally. If AI credentials are set, each call can trigger a paid provider request. Add rate limiting, for example a Vercel Firewall rule, or authentication before enabling AI publicly.
+- **No framing policy.** No `frame-ancestors` or `X-Frame-Options` header is set, so any site can embed the app. The showcase relies on this to embed the app from the same origin, and whether Meta's simulator embeds web apps is unknown. Current Chrome gives third-party iframes separate storage, so an embedding site can't read first-party visit data; other browsers weren't checked.
+- **Expiry is enforced on read, not on a timer.** An expired interrupted visit is never offered, but it stays in storage until its own household and protocol are next shown on the start frame. Expired carry-forward flags are deleted whenever carry-forward data is read, which happens on every start-frame render. Settings → *Delete data on this device* removes everything immediately.
 
 ## Repository layout
 

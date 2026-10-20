@@ -57,7 +57,9 @@ It also proves:
 - flags are counted once and removed by back
 - progress figures
 - `restoreVisit` rejects 10 kinds of inconsistent saved state
-- **exhaustive walk** of every bundled protocol: every step is reached, every edge exercised, every path terminates, and flag counts equal the referral frames on each path
+- **path walk** of every bundled protocol: every step is reached, every transition is exercised, every walked path terminates, and on each walked path the flag count equals the number of referral frames on it
+  - yes/no, choice and info answers are tried exhaustively
+  - **numeric (count and range) answers are sampled, not exhaustive:** the minimum, the maximum, the protocol default, and the values either side of each rule threshold. Every rule outcome, and therefore every transition, is still covered.
 
 **`store.test.js`:**
 - resume restores answers and flags exactly
@@ -91,13 +93,15 @@ It also proves:
 | `wearable.spec.js` | See the breakdown below. |
 | `offline.spec.js` | After one online load, the shell is precached under a build-specific cache and nothing from `/api` is cached. With the network off: reloading `/` and `/glasses.html` still completes visits; record and planner pages work, the planner falling back to the on-device rule; an interrupted visit survives. |
 | `pages.spec.js` | `record.html` renders hostile strings as text; fragment payloads are ignored and stripped; malformed records are deleted; delete-all works. The planner lists every household with rule-based reasons and rejects a server plan that drops one. `review.html` renders server strings as text and labels its data as sample. |
-| `api-contract.spec.js` | Each public route responds; `/` is the multi-protocol app; `/index.html` redirects; source and data files are not served. CSP and `Permissions-Policy` headers are present. Protocol, plan and review endpoints behave correctly for valid, malformed, oversized and wrong-method requests, with or without AI. |
+| `api-contract.spec.js` | Each public route responds; `/` is the multi-protocol app; `/index.html` redirects; source and data files are not served. CSP and `Permissions-Policy` headers are **present**; whether the browser then refuses camera or microphone access is not tested. Protocol, plan and review endpoints behave correctly for valid, malformed, oversized and wrong-method requests. The plan and review assertions accept either an AI or a deterministic response, but only the deterministic case has been observed on any deployment. |
 
 **`wearable.spec.js`** (all keyboard only, at 600×600):
-- **Every protocol × two answer strategies:**
-  - every frame fits 600×600 and has a visible focus ring on the highlighted option
+- **Every protocol × two answer strategies** (accept every default; choose the alternative everywhere):
+  - every frame **rendered on those paths** fits 600×600 and has a visible focus ring on the highlighted option
+  - this renders every frame of `home_visit`, `danger_signs` and `adherence`, but only 5 of the 11 frames of `post_discharge`
+  - the other six (`symptom_category`, `pain_detail`, `bleeding_detail`, `fever_temp`, `wound_detail`, `flag_bp`) are not rendered by any automated test; a one-off manual script on 2026-10-20 found they fit
   - the stored record matches an engine simulation of the same answers
-- **A regression test for each audit finding:**
+- **Regression tests for these audit findings** (the others are covered by other suites, or not at all; see the table below):
   - C2: resume keeps flags
   - C3: a protocol error is never COMPLETE and writes no record
   - C4: count frames confirm with Enter
@@ -112,7 +116,7 @@ It also proves:
   - carry-forward scoping
   - the settings and deletion flow
 - **Network boundary:**
-  - a full visit makes **zero** network requests
+  - a full visit makes **zero** requests. This is measured after the page has loaded, with the service worker disabled for the test. When the service worker is active, page loads also trigger background revalidation GETs for the app's own files; those carry no visit data.
   - deliberate `fetch`, XHR and `sendBeacon` calls from the page are blocked by CSP, with violations recorded and no request completed
 
 **Running against a deployment:** `npm run test:deployed` runs the same specs against `BASE_URL`, so routes, headers, API behaviour and offline behaviour are checked on the real hosting, not only on the local server.
@@ -123,6 +127,23 @@ It also proves:
 - So on a protected preview the four offline tests are **skipped** with that reason. Skipped is never counted as passed.
 - Run them against the public production URL instead.
 
+## Audit findings: tested versus fixed-only
+
+The code fixes for every finding in [AUDIT.md](AUDIT.md) are in place. Not all of them have an automated regression test:
+
+| Finding | Automated evidence |
+|---|---|
+| C1 (root route) | `api-contract.spec.js` |
+| C2, C3, C4, C5, H1, H2, H3, H5, H6 | `wearable.spec.js` (named tests) |
+| C6 (record XSS) | `pages.spec.js`; `store.test.js` |
+| H7 (duplicate sources), H8 (hollow harness) | `validator.test.js` (drift and CLI tests) |
+| H9 (API validation and AI output) | `api.test.js`; `api-contract.spec.js` |
+| H10 (service worker) | **Partial.** `offline.spec.js` covers precaching, offline reload and `/api` never being cached. An update from one deployed build to the next is **not tested**. |
+| H4 (speech reads the on-screen referral text) | **None.** Fixed in code (`announce()` in `glasses-app.js`), not tested. |
+| M1 (path-based progress) | Partial: the H2 Back test asserts "Q2" and the start-over test asserts "Q1" in the progress line; the "up to N more" figures are unit-tested in `engine.test.js` |
+| M4 (assistive-technology semantics) | **None.** ARIA roles are used as test selectors but not asserted, and no screen-reader session was run. |
+| M2, M3, M5–M10 | Covered indirectly by the suites above (settings/deletion flow, headers, schema tests), or by `npm audit` (M10) |
+
 ## Not tested
 
 - Clinical correctness of any protocol.
@@ -131,4 +152,7 @@ It also proves:
 - Screen-reader sessions. ARIA roles are set, but no assistive-technology run was performed.
 - Real AI provider output; all provider behaviour is mocked.
 - A service-worker update from one deployed build to the next.
+- Speech output, including whether the referral announcement matches the on-screen text (H4).
+- Browser enforcement of `Permissions-Policy`; only the header's presence is checked.
+- API abuse: no rate limiting exists, so none is tested.
 - Usability with health workers.

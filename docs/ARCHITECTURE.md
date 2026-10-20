@@ -16,7 +16,8 @@ data/roster.json ─┘
 public/generated/registry.js      (generated; committed so the app runs from static hosting)
 public/sw.js  [generated section] (precache list + BUILD_ID content hash)
 
-Wearable visit workflow (no network)          Support pages (network, nonclinical)
+Wearable visit workflow (no outgoing          Support pages (network, nonclinical)
+connections; loads its own files)
 ────────────────────────────────────          ─────────────────────────────────────
 glasses.html                                  plan.html  → POST /api/plan
   js/engine.js      pure interpreter          review.html → POST /api/review
@@ -55,8 +56,8 @@ Wraps localStorage. Every access sits in try/catch and every read is validated.
 
 | Key | Contents | Retention |
 |---|---|---|
-| `dastak.visits.v2` | Interrupted visits, one per household + protocol | 24 hours |
-| `dastak.carry.v2` | Latest referral flags per household + protocol (step ID + description) | 30 days; cleared by a later visit with no flags |
+| `dastak.visits.v2` | Interrupted visits, one per household + protocol | Not offered after 24 hours; deleted when that household and protocol are next shown |
+| `dastak.carry.v2` | Latest referral flags per household + protocol (step ID + description) | Not shown after 30 days; expired entries deleted on every carry-forward read (each start-frame render); cleared by a later visit with no flags |
 | `dastak.record.v2` | The most recent completed visit record | Until replaced or deleted |
 | `dastak.voice.v2` | Voice name or `off` | Until deleted |
 
@@ -83,7 +84,7 @@ Wraps localStorage. Every access sits in try/catch and every read is validated.
 - **Header:** every frame shows the protocol, its content status (e.g. "DRAFT · not reviewed"), progress, and whether progress is being saved.
 - **Range frames** show a 5-row window starting at the protocol's `default`, so a 15–25 value range never scrolls the 600×600 page.
 - **Speech:** referral frames speak exactly the on-screen prompt and referral text. If speech is off or unsupported, a tone plays instead.
-- **No network:** no inline script, and the page's CSP includes `connect-src 'none'` (meta tag and HTTP header).
+- **No outgoing connections:** no inline script, and the page's CSP includes `connect-src 'none'` (meta tag and HTTP header). That blocks fetch, XHR, WebSocket, EventSource and beacons. The page still loads its own same-origin HTML, scripts and icons, from the network or the service-worker cache.
 
 ### Service worker (`public/sw.js`)
 
@@ -135,3 +136,7 @@ Every failure returns the deterministic result with `fallbackReason`.
 - The yes/no frame highlights "Yes" first. This behaviour comes from the original prototype; its safety is an open UX question.
 - There are no repeat groups (removed from the schema until implemented), no localisation, and no cross-device transfer.
 - The AI output filter is a word list. It lowers risk; it can't guarantee nonclinical output.
+- **Expiry is enforced on read, not on a timer** (see the storage table). Nothing runs in the background to delete data at the deadline. *Delete data on this device* is immediate.
+- **No API rate limiting or authentication.** This is harmless while AI is unconfigured, because responses are computed locally. Each call could trigger a paid provider request once credentials are set. Add rate limiting or auth first (audit finding R1).
+- **No framing policy** (`frame-ancestors` / `X-Frame-Options`). This is deliberate: the showcase embeds the app from the same origin, and it's unknown whether Meta's simulator embeds web apps. Current Chrome partitions third-party iframe storage (audit finding R2).
+- `verify`'s "UNSOURCED" count only checks the literal marker. `home_visit` names its prototype author as `content_source`, so it counts as 0 UNSOURCED while being unreviewed `clinical-draft` content (audit finding R4).

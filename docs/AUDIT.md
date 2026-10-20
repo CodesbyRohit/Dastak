@@ -208,13 +208,34 @@ This document records the state *before* the DevFest 2026 upgrade. Each finding 
 
 ## Summary
 
-| ID | Severity | Status after upgrade |
-|---|---|---|
-| C1 | Critical | Fixed. `/` serves the multi-protocol app; legacy engine removed |
-| C2 | Critical | Fixed. Resume replays and validates the saved path |
-| C3 | Critical | Fixed. Error frame, never COMPLETE; per-visit resume state |
-| C4 | Critical | Fixed. Enter always confirms |
-| C5 | Critical | Fixed. Enter starts the selected protocol |
-| C6 | Critical | Fixed. No fragment import; validated records; textContent only |
-| H1–H10 | High | Fixed (see regression tests in docs/TESTING.md) |
-| M1–M10 | Medium | Fixed (M10 by `npm audit fix`; Express 4.22.3) |
+"Fixed" means the code change is in place. The **Test evidence** column says whether an automated test guards it. The full mapping is in [TESTING.md](TESTING.md#audit-findings-tested-versus-fixed-only).
+
+| ID | Severity | Status after upgrade | Test evidence |
+|---|---|---|---|
+| C1 | Critical | Fixed. `/` serves the multi-protocol app; legacy engine removed | Tested (`api-contract.spec.js`; also against production) |
+| C2 | Critical | Fixed. Resume replays and validates the saved path | Tested (`wearable.spec.js`, `store.test.js`) |
+| C3 | Critical | Fixed. Error frame, never COMPLETE; per-visit resume state | Tested (`wearable.spec.js`, `engine.test.js`) |
+| C4 | Critical | Fixed. Enter always confirms | Tested (`wearable.spec.js`) |
+| C5 | Critical | Fixed. Enter starts the selected protocol | Tested (`wearable.spec.js`) |
+| C6 | Critical | Fixed. No fragment import; validated records; textContent only | Tested (`pages.spec.js`, `store.test.js`) |
+| H1, H2, H3, H5, H6 | High | Fixed | Tested (`wearable.spec.js`) |
+| H4 | High | Fixed in code: speech reads the on-screen prompt and referral text | **Not tested.** No automated test covers speech output |
+| H7, H8 | High | Fixed | Tested (`validator.test.js` drift and CLI tests) |
+| H9 | High | Fixed | Tested (`api.test.js`, `api-contract.spec.js`) |
+| H10 | High | Fixed in code | **Partially tested.** Precaching, offline reload and never caching `/api` are tested, also against production. An update between two deployed builds is **not tested** |
+| M1 | Medium | Fixed | Partially tested (progress text in `wearable.spec.js`; figures in `engine.test.js`) |
+| M4 | Medium | Fixed in code: `aria-live` region, radiogroup semantics | **Not tested.** No assertions and no screen-reader session |
+| M2, M3, M5–M9 | Medium | Fixed | Covered indirectly (settings and deletion flow, header and schema tests) |
+| M10 | Medium | Fixed by `npm audit fix` (Express 4.22.3) | `npm audit`: 0 vulnerabilities at the time of the fix |
+
+## Found during the release-readiness review (2026-10-20)
+
+These are recorded here, not fixed. None changes application behaviour.
+
+| ID | Severity | Finding | Status |
+|---|---|---|---|
+| R1 | Medium (cost and abuse, only if AI is enabled) | `/api/plan` and `/api/review` have no rate limiting or authentication. In production the AI variables currently resolve to empty, so responses are computed locally and cost nothing. If credentials are set, each anonymous call can trigger a paid provider request. | Open. Add rate limiting (e.g. a Vercel Firewall rule) or auth **before** enabling AI |
+| R2 | Low | No `frame-ancestors` or `X-Frame-Options`, so any site can embed the app. This is intentional for the same-origin showcase embed and the possibility that Meta's simulator embeds web apps. Current Chrome partitions third-party iframe storage, so embedders can't read first-party visit data; other browsers weren't checked. | Open; documented decision |
+| R3 | Low (documentation) | Expiry is enforced on read. An expired interrupted visit is never offered, but it stays stored until its household and protocol are next shown. Expired carry-forward flags are pruned on every carry read. | Documented in README and ARCHITECTURE |
+| R4 | Low (communication) | `home_visit`'s `content_source` names the prototype author, so `npm run verify` reports "0 UNSOURCED" for it. That count means "not marked UNSOURCED", not "clinically sourced". The protocol is `clinical-draft` with review state `unreviewed`. | Documented; clinical review outstanding |
+| R5 | Low (hygiene) | An empty stray file named `{console.log(b.version())` was committed at the repository root by an earlier `scripts/report.js` (a Windows shell-quoting mistake, since fixed in the script). It was never served. | Removed in this change |

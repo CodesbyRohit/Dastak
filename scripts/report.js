@@ -58,7 +58,10 @@ const NOT_COVERED = [
   'Browsers other than Chromium (no Firefox or WebKit runs).',
   'Screen-reader output (semantics are set; no assistive-technology session was run).',
   'Real AI provider responses (provider behaviour is simulated with mocked responses).',
-  'Service-worker update from one deployed version to the next.',
+  'Service-worker update from one deployed version to the next (audit H10 is only partially tested).',
+  'Speech output, including whether the referral announcement matches the on-screen text (audit H4, fixed in code, not tested).',
+  'Every numeric value: count and range inputs are tested at selected values (bounds, default, around each rule threshold), not exhaustively.',
+  'Browser enforcement of Permissions-Policy (only the header is checked) and API abuse (no rate limiting exists).',
   'Field usability with health workers.'
 ];
 
@@ -97,7 +100,7 @@ const md = [
   '',
   ...NOT_COVERED.map(t => '- ' + t),
   '',
-  'See [TESTING.md](TESTING.md) for what each suite proves.',
+  'See [TESTING.md](TESTING.md) for what each suite proves, and which audit fixes have no automated test.',
   ''
 ].join('\n');
 fs.writeFileSync(path.join(ROOT, 'docs', 'TEST-RESULTS.md'), md);
